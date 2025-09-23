@@ -1,0 +1,44 @@
+.logout-button{ 
+float: right !important;
+margin-top: 10px !important;
+}
+
+/* Container for the dashboard */
+.dashboard-container {
+    display: flex;
+    justify-content: center; /* Center the form horizontally */
+    align-items: center; /* Center the form vertically */
+    min-height: 100vh; /* Full height of the viewport */
+    background-color: #f8f9fa; /* Light background color */
+    padding: 20px; /* Add padding for spacing */
+  }
+  
+  /* Wrapper for the form */
+  .dashboard-form-wrapper {
+    background-color: #fff; /* White background for the form */
+    padding: 200px 100px; /* Add padding inside the form */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for better visibility */
+    width: 100%; /* Full width */
+    max-width: 1000px; /* Limit the maximum width */
+  }
+  
+  /* Form labels */
+  .dashboard-form-wrapper .form-label {
+    font-weight: bold; /* Make labels bold */
+    color: #333; /* Dark text color */
+  }
+  
+  /* Submit button */
+  .dashboard-form-wrapper button[type="submit"] {
+    background-color: #007bff; /* Bootstrap primary color */
+    color: #fff; /* White text */
+    border: none; /* Remove border */
+    padding: 10px 20px; /* Add padding */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+  }
+  
+  .dashboard-form-wrapper button[type="submit"]:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+  }
