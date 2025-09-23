@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Container, Row, Col, Button, InputGroup, FormControl, Table } from "react-bootstrap";
 import { addProductToCart, updateCart, getUserCart, deleteFromCart } from "../Constant";
+import { Currency } from "../App";
 
 const Cart = () => {
     const [cartItems, setCartItems] = useState({});
@@ -169,8 +170,8 @@ const Cart = () => {
                                                         <img
                                                             src={
                                                                 (item.Image && item.Image[0]) ||
-                                                                item.image ||
-                                                                "https://via.placeholder.com/80"
+                                                                item.image 
+            
                                                             }
                                                             alt={item.name || "Product"}
                                                             className="img-fluid rounded"
@@ -269,7 +270,7 @@ const Cart = () => {
                                 <hr />
                                 <div className="d-flex justify-content-between mb-3">
                                     <h5>Total:</h5>
-                                    <h5>₹{cartTotal.toFixed(2)}</h5>
+                                    <h5>{Currency}{cartTotal.toFixed(2)}</h5>
                                 </div>
                                 <Button 
                                     variant="primary" 
