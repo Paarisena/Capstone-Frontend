@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Form, Card, Button, Carousel, Container, Row, Col, Spinner, Alert } from "react-bootstrap";
 import { reviewProduct, fetchReviews, deleteReview, addProductToCart } from "../Constant";
 import { StarFill, Star, CartPlus, CreditCard } from 'react-bootstrap-icons';
+import { Currency } from "../App";
 
 const InnerView = () => {
     const { id } = useParams();
@@ -234,6 +235,58 @@ const InnerView = () => {
 
     return (
         <div className="bg-white">
+            <style jsx>{`
+                @media (max-width: 573px) {
+                    .product-container {
+                        position: relative !important;
+                        top: 2rem !important;
+                    }
+                    
+                    .product-info {
+                        position: relative !important;
+                        top: 1rem !important;
+                    }
+                    
+                    .rating-section {
+                        position: relative !important;
+                        left: 0 !important;
+                        justify-content: center;
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .action-buttons {
+                        position: relative !important;
+                        left: 0 !important;
+                        justify-content: center;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                    }
+                    
+                    .action-buttons .btn {
+                        width: 50%;
+                        align-self: center;
+                        margin: 0 !important;
+                    }
+                    
+                    .product-title {
+                        text-align: center;
+                        font-size: 1.25rem;
+                    }
+                    
+                    .product-price {
+                        text-align: center;
+                    }
+                    
+                    .reviews-section {
+                        margin-top: 1rem;
+                    }
+                    
+                    .review-form-container {
+                        margin-top: 1rem;
+                    }
+                }
+            `}</style>
+            
             {actionStatus.message && (
                 <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1050, maxWidth: "300px" }}>
                     <Alert 
@@ -247,7 +300,7 @@ const InnerView = () => {
                 </div>
             )}
             
-            <Container className="py-4" style={{ position: 'relative', top: '7rem' }}>
+            <Container className="py-4 product-container" style={{ position: 'relative', top: '7rem' }}>
                 <Row className="mb-4">
                     {/* Product Images */}
                     <Col lg={5} md={6} className="mb-4 mb-md-0">
@@ -283,10 +336,10 @@ const InnerView = () => {
                     </Col>
                     
                     {/* Product Information */}
-                    <Col lg={7} md={6} style={{ position: 'relative', top: '6rem' }}>
-                        <h1 className="h3 fw-bold mb-4">{product.productName || product.name}</h1>
+                    <Col lg={7} md={6} className="product-info" style={{ position: 'relative', top: '6rem' }}>
+                        <h1 className="h3 fw-bold mb-4 product-title">{product.productName || product.name}</h1>
 
-                        <div className="mb-3 d-flex align-items-center" style={{position: 'relative', left:'18rem'}}>
+                        <div className="mb-3 d-flex align-items-center rating-section" style={{position: 'relative', left:'18rem'}}>
                             {averageRating !== "No ratings" ? (
                                 <>
                                     <div className="me-2">
@@ -309,14 +362,14 @@ const InnerView = () => {
                             )}
                         </div>
                         
-                        <h2 className="h4 fw-bold text-primary mb-3">₹{product.Price || product.price}</h2>
+                        <h2 className="h4 fw-bold text-primary mb-3 product-price">{Currency}{product.Price || product.price}</h2>
                         
                         <div className="mb-3">
                             <h5 className="fw-bold mb-2 h6">Description</h5>
                             <p className="text-secondary">{product.productDescription || product.description || "No description available for this product."}</p>
                         </div>
                         
-                        <div className="d-flex mt-3" style={{ position: 'relative', left: '16rem' }}>
+                        <div className="d-flex mt-3 action-buttons" style={{ position: 'relative', left: '16rem' }}>
                             <Button 
                                 variant="primary" 
                                 className="me-2 d-flex align-items-center"
@@ -336,7 +389,7 @@ const InnerView = () => {
                 </Row>
                 
                 {/* Compact Reviews Section */}
-                <div className="mt-3 pt-2 border-top">
+                <div className="mt-3 pt-2 border-top reviews-section">
                     <h3 className="h5 fw-bold mb-2">Customer Reviews</h3>
                     
                     <Row>
@@ -387,7 +440,7 @@ const InnerView = () => {
                         </Col>
                         
                         {/* Review Form - More compact */}
-                        <Col md={5} className="mb-2">
+                        <Col md={5} className="mb-2 review-form-container">
                             {isLoggedIn ? (
                                 <div className="bg-light rounded p-2">
                                     <Form onSubmit={handleReviewSubmit} className="compact-form">

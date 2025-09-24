@@ -134,7 +134,7 @@ const Cart = () => {
     }
 
     return (
-        <Container className="py-4">
+        <Container className="py-4" style={{ transform: 'none', transition: 'none' }}>
             <Card className="shadow-sm mb-4">
                 <Card.Header className="bg-white">
                     <div className="d-flex justify-content-between align-items-center">
@@ -179,7 +179,9 @@ const Cart = () => {
                                                                 height: "80px", 
                                                                 width: "80px", 
                                                                 objectFit: "cover", 
-                                                                cursor: "pointer" 
+                                                                cursor: "pointer",
+                                                                transform: "none",
+                                                                transition: "none"
                                                             }}
                                                             onClick={() => handleProductClick(itemId)}
                                                         />
@@ -191,7 +193,7 @@ const Cart = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td>₹{item.price}</td>
+                                                <td>{Currency}{item.price}</td>
                                                 <td>
                                                     <InputGroup className="w-auto">
                                                         <FormControl

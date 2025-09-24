@@ -165,6 +165,11 @@ const NavigationBar = () => {
           border: 1px solid rgba(255, 255, 255, 0.3);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+          nav-user-menu {
+          display: flex;
+          align-items: center;
+          bottom: 6rem
+        }
 
         .dropdown-item {
           transition: all 0.3s ease;
@@ -178,15 +183,16 @@ const NavigationBar = () => {
           backdrop-filter: blur(5px);
         }
         
-        @media (max-width: 991px) {
+        @media (max-width: 573px) {
           .navbar-brand {
-            font-size: 1.25rem;
+            font-size: 1rem;
             margin-bottom: 0;
           }
+            
           
           .nav-links {
             margin-top: 1rem;
-            display: flex;
+            display: grid;
             flex-direction: column;
             gap: 0.5rem;
             background: rgba(255, 255, 255, 0.1);
