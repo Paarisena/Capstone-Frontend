@@ -113,9 +113,24 @@ const Cart = () => {
     };
 
     const handleCheckout = () => {
-        navigate('/checkout');
-    };
-
+        navigate('/payment', { 
+            state: { 
+                cartItems: Object.entries(cartItems).map(([id, item]) => ({
+                    _id: id,
+                productId: id,
+                itemId: id,
+                productName: item.name || item.productName,
+                Price: parseFloat(item.price || 0),
+                Image: item.Image,
+                quantity: quantities[id] || item.quantity || 1,
+                Category: item.Category
+            })),
+            get totalAmount() {
+                return this.cartItems.reduce((sum, item) => sum + (item.Price * item.quantity), 0);
+            }
+        } 
+    });
+};
     // Calculate total
     const cartTotal = Object.values(cartItems).reduce(
         (sum, item) => sum + (parseFloat(item.price) || 0) * (quantities[item._id] || item.quantity || 1),

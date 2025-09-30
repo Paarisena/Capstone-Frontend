@@ -61,11 +61,13 @@ function Login() {
                     toast.error('Session expired, please login again');
                     return;
                 }
+                console.log("Login Payload:", payload);
 
                 localStorage.setItem('Usertoken', data.token);
                 localStorage.setItem('Useremail', payload.email);
                 localStorage.setItem('userID', payload.id);
                 localStorage.setItem('Username', payload.name);
+                
                 
                 toast.success('Login successful');
                 navigate("/");

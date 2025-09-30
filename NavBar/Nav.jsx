@@ -66,6 +66,9 @@ const NavigationBar = () => {
                 <Dropdown.Item onClick={() => navigate("/profile")}>
                   Profile
                 </Dropdown.Item>
+                <Dropdown.Item onClick={() => navigate("/view-order")}>
+                  My Orders
+                </Dropdown.Item>
                 <Dropdown.Divider />
                 <Dropdown.Item onClick={handleLogin}>Logout</Dropdown.Item>
               </Dropdown.Menu>

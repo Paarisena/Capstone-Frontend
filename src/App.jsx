@@ -29,7 +29,10 @@ import Layout from '../Layout/Layout';
 import ForgotPassword from './Component/ForgotPassword';
 import ResetPassword from './Component/ResetPassword.jsx';
 import Verification from './Component/Verification.jsx';
-
+import Payment from './Pages/Payment.jsx';
+import OrderSuccess from './Pages/orderSucess.jsx';
+import ViewOrder from './Pages/ViewOrder.jsx';
+import OrderDetails from './Pages/OrderDetails.jsx';
 
 export const Currency = "$";
 
@@ -117,6 +120,7 @@ const Loggedin = Boolean(localStorage.getItem("Usertoken"));
             <Route path="/products/:id" element={<InnerView />} />
             <Route path="/cart/:id" element={<Cart />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/view-order" element={<ViewOrder />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/return-policy" element={<ReturnPolicy />} />
@@ -127,6 +131,10 @@ const Loggedin = Boolean(localStorage.getItem("Usertoken"));
             <Route path="/admin-reset-password/:token" element={<ResetPassword isAdmin={true} />} />
             <Route path="/verification/:token" element={<Verification isAdmin={false} />} />
             <Route path="/admin-verification/:token" element={<Verification isAdmin={true} />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="/order-details/:orderId" element={<OrderDetails />} />
 
           </Route>
         </Routes>

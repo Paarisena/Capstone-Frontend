@@ -16,6 +16,8 @@ const Profile = () => {
             zip: ""
         }
     });
+
+
     
     const navigate = useNavigate();
     const [selectedState, setSelectedState] = useState(profileData.address?.state || "");
@@ -62,11 +64,20 @@ const Profile = () => {
         try {
             const response = await AddProfile(profileData, localStorage.getItem("Usertoken"));
             console.log("Profile updated successfully:", response);
+
+            if (profileData.address?.street) {
+            localStorage.setItem("Address", profileData.address.street);
+            localStorage.setItem("City", profileData.address.city);
+            localStorage.setItem("State", profileData.address.state);
+            localStorage.setItem("PostalCode", profileData.address.zip);
+        }
             navigate("/profile");
         } catch (error) {
             console.error("Error updating profile:", error);
         }
     };
+
+    console.log("Profile Data:", profileData);
 
     return (
         <Container className="py-4">
