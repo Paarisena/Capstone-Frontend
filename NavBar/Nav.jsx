@@ -19,7 +19,7 @@ const NavigationBar = () => {
       localStorage.removeItem("Usertoken");
       window.location.href = "/";
     } else {
-      window.location.href = "/Login";
+      window.location.href = "/login";
     }
   };
 
