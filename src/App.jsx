@@ -59,33 +59,6 @@ const Loggedin = Boolean(localStorage.getItem("Usertoken"));
     <div>
       <ToastContainer />
       
-      {/* {!hideNavBar &&  (
-     <div className="title-section text-center py-3" width="99.2%" >
-                <h1 style={{position:"relative", left:"200px"}}>ART VISTA GALLERY</h1>
-                <button className="btn btn-outline-primary" onClick={handleLogin}
-                style={{position:"absolute",top:"50px",right:"2rem", transform:"translateY(-50%)"}}>
-                    {localStorage.getItem("Usertoken") ? "Logout" : "Login"}
-                </button>                 
-                {Loggedin && Username ? (
-            <Dropdown style={{position:"absolute",top:"50px",right:"10rem", transform:"translateY(-90%)", overflow: "visible", zIndex: 9999}}>
-              <Dropdown.Toggle variant="link" id="dropdown-username" style={{color: "#333", textDecoration: "none"}}>
-                Welcome, {Username}
-              </Dropdown.Toggle>
-              <Dropdown.Menu renderMenuOnMount={true} popperConfig={{ strategy: "fixed" }}  style={{ position: "absolute", zIndex: 9999 }}>
-                <Dropdown.Item onClick={() => navigate("/cart/" + localStorage.getItem("userID"))}>
-                  My Cart
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => navigate("/profile")}>
-                  Profile
-                </Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item onClick={handleLogin}>Logout</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          ) : null}
-        </div>
-      
-      )} */}
 
       
       
