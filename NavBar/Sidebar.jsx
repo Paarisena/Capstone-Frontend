@@ -9,7 +9,7 @@ import {
   ChevronRight,
   Palette
 } from "react-bootstrap-icons";
-import "./sidebar.css";
+import "./Sidebar.css";
 
 const Sidebar = () => {
   const navigate = useNavigate();
