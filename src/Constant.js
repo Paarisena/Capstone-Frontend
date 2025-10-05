@@ -1,5 +1,6 @@
 import { useEffect,useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { io } from 'socket.io-client';
 import axios from 'axios';
 
 const beUrl = import.meta.env.VITE_BE_URL;
@@ -576,10 +577,11 @@ const verification = async (email, verificationCode, isAdmin = false) => {
     }
 }
 
+// Fix createPaymentIntent
 const createPaymentIntent = async (paymentData) => {
     try {
         const Usertoken = localStorage.getItem('UserToken');
-        const response = await fetch(`${beUrl}/api/create-payment-intent`, {
+        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, { // Added payments prefix
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -601,38 +603,15 @@ const createPaymentIntent = async (paymentData) => {
     }
 };
 
-const confirmPayment = async (confirmationData) => {
+// Fix getPayment
+const getPayment = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('UserToken');
-        const response = await fetch(`${beUrl}/api/confirm-payment`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Usertoken}`,
-            },
-            body: JSON.stringify(confirmationData),
-        });
-
-        const responseData = await response.json();
-        if (!response.ok) {
-            console.log('Payment Confirmation Error:', responseData);
-            throw new Error(`Error ${response.status}: ${responseData.message}`);
-        }
-
-        return responseData;
-    } catch (error) {
-        console.error('Confirm payment error:', error);
-        throw error;
-    }
-};
-
-const getPayment = async (paymentId) => {
-    try {
-        const Usertoken = localStorage.getItem('UserToken');
-        const response = await fetch(`${beUrl}/api/payment/${paymentId}`, {
+        const Usertoken = localStorage.getItem('UserToken'); // Fixed token name
+        const response = await fetch(`${beUrl}/api/payments/payment/${orderId}`, { // Added payments prefix
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${Usertoken}`,
+                'Content-Type': 'application/json'
             },
         });
 
@@ -649,10 +628,11 @@ const getPayment = async (paymentId) => {
     }
 };
 
+// Fix getUserPayments
 const getUserPayments = async (userId, token) => {
     try {
         const Usertoken = token || localStorage.getItem('UserToken');
-        const response = await fetch(`${beUrl}/api/user/${userId}`, {
+        const response = await fetch(`${beUrl}/api/payments/user/${userId}`, { // Added payments prefix
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${Usertoken}`,
@@ -673,10 +653,11 @@ const getUserPayments = async (userId, token) => {
     }
 }
 
+// Fix refundPayment
 const refundPayment = async (refundData) => {
     try {
         const Admintoken = localStorage.getItem('admintoken');
-        const response = await fetch(`${beUrl}/api/refund`, {
+        const response = await fetch(`${beUrl}/api/payments/refund`, { // Added payments prefix
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -698,64 +679,54 @@ const refundPayment = async (refundData) => {
     }
 };
 
-// Comprehensive payment processing function
+// Fix processPayment
 const processPayment = async (cartItems, totalAmount, shippingAddress) => {
     try {
         const userId = localStorage.getItem('userID');
+        const token = localStorage.getItem('UserToken');
         
-        if (!userId) {
-            throw new Error('User not logged in');
+        if (!userId || !token) {
+            throw new Error('User not authenticated');
         }
 
-        // Prepare payment data
-        const paymentIntentData = {
-            userId,
-            amount: totalAmount,
-            currency: 'SGD',
-            items: cartItems.map(item => ({
-                productId: item.itemId || item.productId || item._id,
-                quantity: item.quantity || 1,
-                price: item.price || item.Price
-            })),
-            shippingAddress: shippingAddress || {
-                street: '',
-                city: 'Singapore',
-                state: 'Singapore',
-                zip: ''
-            }
-        };
+        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, { // Added payments prefix
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId,
+                amount: parseFloat(totalAmount),
+                currency: 'sgd',
+                items: cartItems.map(item => ({
+                    productId: item.productId || item._id,
+                    quantity: item.quantity,
+                    price: item.Price || item.price,
+                    name: item.productName || item.name
+                })),
+                shippingAddress
+            })
+        });
 
-        console.log('Processing payment with data:', paymentIntentData);
-
-        // Create payment intent
-        const paymentIntent = await createPaymentIntent(paymentIntentData);
+        const responseData = await response.json();
         
-        if (!paymentIntent.success) {
-            throw new Error(paymentIntent.message || 'Failed to create payment intent');
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
         }
 
-        return {
-            success: true,
-            clientSecret: paymentIntent.clientSecret,
-            paymentId: paymentIntent.paymentId,
-            orderId: paymentIntent.orderId,
-            message: 'Payment intent created successfully'
-        };
-
+        return responseData;
     } catch (error) {
         console.error('Process payment error:', error);
-        return {
-            success: false,
-            message: error.message || 'Payment processing failed'
-        };
+        throw error;
     }
 };
 
-// Quick payment status check
+// Fix getPaymentStatus
 const getPaymentStatus = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('Usertoken');
-        const response = await fetch(`${beUrl}/api/status/${orderId}`, {
+        const Usertoken = localStorage.getItem('UserToken'); // Fixed token name
+        const response = await fetch(`${beUrl}/api/payments/status/${orderId}`, { // Added payments prefix
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${Usertoken}`,
@@ -775,10 +746,34 @@ const getPaymentStatus = async (orderId) => {
     }
 };
 
+const confirmPayment = async (paymentIntentId) => {
+    try {
+        const Usertoken = localStorage.getItem('UserToken');
+        const response = await fetch(`${beUrl}/api/payments/confirm`, { // Added payments prefix
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Usertoken}`,
+            },
+            body: JSON.stringify({ paymentIntentId }),
+        }); 
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Confirm Payment Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+        return responseData;
+    } catch (error) {
+        console.error('Confirm payment error:', error);
+        throw error;
+    }
+};
+
+// Fix orderDetails
 const orderDetails = async (orderId) => {
     try {
         const Usertoken = localStorage.getItem('UserToken');
-        const response = await fetch(`${beUrl}/api/order-details/${orderId}`, {
+        const response = await fetch(`${beUrl}/api/payments/order-details/${orderId}`, { // Added payments prefix
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${Usertoken}`,
@@ -803,6 +798,70 @@ const getAllPayments = async (userId, token) => {
     return await getUserPayments(userId, token);
 };
 
+// In Constant.js - Add polling function
+const pollPaymentStatus = async (paymentIntentId, maxAttempts = 30) => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            const response = await fetch(`${beUrl}/api/payments/check-status/${paymentIntentId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('UserToken')}`
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.paymentStatus !== 'pending') {
+                return result;
+            }
+            
+            // Wait 2 seconds before next attempt
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }
+    
+    throw new Error('Payment status check timeout');
+};
 
-export {userRegister,userLogin,AdminRegister,AdminLogin, profiles, fetchProducts,addProduct,deleteProduct,singleProduct,autoLogout, reviewProduct, fetchReviews, deleteReview, addProductToCart, updateCart, getUserCart, deleteFromCart, fetchProductsPublic,editProduct, AddProfile, fetchUserProfile, forgotPassword, resetPassword, verification,createPaymentIntent, confirmPayment, getPayment, getUserPayments, 
-    refundPayment, processPayment, getPaymentStatus, orderDetails, getAllPayments};
+
+const usePaymentStatusListener = (orderId, onStatusUpdate) => {
+    useEffect(() => {
+        if (!orderId) return;
+
+        const socket = io(import.meta.env.VITE_BE_URL || 'http://localhost:8080');
+
+        console.log('🔄 Listening for payment updates for order:', orderId);
+
+        // Listen for payment status updates
+        socket.on('payment_status_update', (data) => {
+            console.log('📨 Payment status update received:', data);
+            
+            // Check if this update is for our order
+            if (data.orderId === orderId || data.transactionId === orderId) {
+                console.log('✅ Status update matches our order');
+                onStatusUpdate(data.paymentStatus, data.payment);
+            }
+        });
+
+        // Handle connection events
+        socket.on('connect', () => {
+            console.log('🔗 Connected to payment status updates');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('❌ Disconnected from payment status updates');
+        });
+
+        // Cleanup on unmount
+        return () => {
+            console.log('🧹 Cleaning up socket connection');
+            socket.disconnect();
+        };
+    }, [orderId, onStatusUpdate]);
+};
+
+// Export the function
+export { userRegister,userLogin,AdminRegister,AdminLogin, profiles, fetchProducts,addProduct,deleteProduct,singleProduct,autoLogout, reviewProduct, fetchReviews, deleteReview, addProductToCart, updateCart, getUserCart, deleteFromCart, fetchProductsPublic,editProduct, AddProfile, fetchUserProfile, forgotPassword, resetPassword, verification,createPaymentIntent, confirmPayment, getPayment, getUserPayments, 
+    refundPayment, processPayment, getPaymentStatus, orderDetails, getAllPayments, pollPaymentStatus, usePaymentStatusListener };

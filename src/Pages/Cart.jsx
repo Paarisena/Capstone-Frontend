@@ -213,7 +213,8 @@ const Cart = () => {
                                                     <InputGroup className="w-auto">
                                                         <FormControl
                                                             type="number"
-                                                            min={1}
+
+                                                            min={0}
                                                             value={quantities[itemId] || item.quantity || 1}
                                                             onChange={e => handleQuantityChange(itemId, e.target.value)}
                                                             style={{ width: "80px" }}

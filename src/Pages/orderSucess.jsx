@@ -49,7 +49,7 @@ const OrderSuccess = () => {
             <div className="order-error">
                 <h2>Something went wrong</h2>
                 <p>{error}</p>
-                <button onClick={() => navigate('/products')} className="btn btn-primary">
+                <button onClick={() => navigate('/Collections')} className="btn btn-primary">
                     Continue Shopping
                 </button>
             </div>
@@ -96,11 +96,11 @@ const OrderSuccess = () => {
                         {orderDetails.items.map((item, index) => (
                             <div key={index} className="order-item">
                                 <img 
-                                    src={item.image || '/placeholder.jpg'} 
+                                    src={item.productId?.Image?.[0] || '/placeholder.jpg'} 
                                     alt={item.name || 'Product'}
                                 />
                                 <div className="item-info">
-                                    <h4>{item.name || item.productName || 'Product'}</h4>
+                                    <h4>{item.productId?.productName || 'Product'}</h4>
                                     <p>Qty: {item.quantity || 1} × ${item.price || '0.00'}</p>
                                 </div>
                             </div>
@@ -123,7 +123,7 @@ const OrderSuccess = () => {
                 {/* Action Buttons */}
                 <div className="action-buttons">
                     <button 
-                        onClick={() => navigate('/collections')}
+                        onClick={() => navigate('/Collections')}
                         className="btn btn-primary"
                     >
                         Continue Shopping

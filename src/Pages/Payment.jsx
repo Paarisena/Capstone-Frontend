@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { processPayment, confirmPayment, getUserCart, fetchUserProfile } from '../Constant.js';
+import { processPayment, confirmPayment, getUserCart, fetchUserProfile, pollPaymentStatus } from '../Constant.js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements, } from '@stripe/react-stripe-js';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { usePaymentStatusListener } from '../Constant.js';
 
 import './Payment.css';
 import { useEffect } from 'react';
@@ -10,12 +11,38 @@ import { useEffect } from 'react';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
+
 const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess }) => {
     const stripe = useStripe();
     const elements = useElements();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
+    const [currentOrderId, setCurrentOrderId] = useState(null);
+    const [paymentStatus, setPaymentStatus] = useState('pending');
+    const navigate = useNavigate();
+
+    // ✅ Listen for real-time webhook updates
+    usePaymentStatusListener(currentOrderId, (status, payment) => {
+        console.log('🎉 Payment status updated from webhook:', status);
+        setPaymentStatus(status);
+        
+        if (status === 'succeeded') {
+            setMessage('Payment successful! Redirecting...');
+            setMessageType('success');
+            setLoading(false);
+            
+            // Clear cart and redirect
+            localStorage.removeItem('cartItems');
+            setTimeout(() => {
+                navigate(`/payment-success/${payment.orderId}`);
+            }, 2000);
+        } else if (status === 'failed') {
+            setMessage('Payment failed. Please try again.');
+            setMessageType('error');
+            setLoading(false);
+        }
+    });
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -31,13 +58,21 @@ const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess
 
         try {
             // Step 1: Create payment intent
+            setMessage('Creating payment...');
             const paymentResult = await processPayment(cartItems, totalAmount, shippingAddress);
             
             if (!paymentResult.success) {
                 throw new Error(paymentResult.message);
             }
 
-            // Step 2: Confirm payment with Stripe
+            // Step 2: Start listening for webhook updates
+            setCurrentOrderId(paymentResult.orderId);
+            console.log('🎯 Started listening for order:', paymentResult.orderId);
+
+            // Step 3: Confirm payment with Stripe
+            setMessage('Processing payment...');
+            setPaymentStatus('processing');
+            
             const { error, paymentIntent } = await stripe.confirmCardPayment(
                 paymentResult.clientSecret,
                 {
@@ -55,30 +90,29 @@ const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess
                 throw new Error(error.message);
             }
 
-            // Step 3: Confirm payment in backend
-            const confirmResult = await confirmPayment({
-                paymentIntentId: paymentIntent.id,
-                paymentMethodId: paymentIntent.payment_method
-            });
-
-            if (confirmResult.success) {
+            // Step 4: Wait for webhook to confirm
+            if (paymentIntent.status === 'succeeded') {
+                // Sometimes immediate success
                 setMessage('Payment successful! Redirecting...');
                 setMessageType('success');
-                
-                // Clear cart and redirect after success
+                setPaymentStatus('succeeded');
+                localStorage.removeItem('cartItems');
                 setTimeout(() => {
-                    onPaymentSuccess(paymentResult.orderId);
+                    navigate(`/payment-success/${paymentResult.orderId}`);
                 }, 2000);
             } else {
-                throw new Error(confirmResult.message);
+                // Wait for webhook confirmation
+                setMessage('Confirming payment... Please wait');
+                setPaymentStatus('confirming');
+                // The webhook listener will handle the success
             }
-
+            
         } catch (error) {
             console.error('Payment error:', error);
             setMessage(`Payment failed: ${error.message}`);
             setMessageType('error');
-        } finally {
             setLoading(false);
+            setPaymentStatus('failed');
         }
     };
 
@@ -100,37 +134,40 @@ const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess
     };
 
     return (
-        <div className="payment-form-container">
-            <form onSubmit={handleSubmit} className="payment-form">
-                <div className="card-element-container">
-                    <label className="card-label">Card Details</label>
-                    <div className="card-element-wrapper">
-                        <CardElement options={cardElementOptions} />
-                    </div>
+        <form onSubmit={handleSubmit}>
+            {/* Show payment status */}
+            {currentOrderId && (
+                <div className="payment-status-indicator">
+                    <p>Status: <strong>{paymentStatus}</strong></p>
+                    {paymentStatus === 'processing' || paymentStatus === 'confirming' ? (
+                        <div className="spinner"></div>
+                    ) : null}
                 </div>
-                
-                <button 
-                    type="submit" 
-                    disabled={!stripe || loading} 
-                    className={`payment-button ${loading ? 'loading' : ''}`}
-                >
-                    {loading ? (
-                        <>
-                            <span className="spinner"></span>
-                            Processing...
-                        </>
-                    ) : (
-                        `Pay $${totalAmount} SGD`
-                    )}
-                </button>
-                
-                {message && (
-                    <div className={`payment-message ${messageType}`}>
-                        {message}
-                    </div>
+            )}
+            
+            <CardElement options={cardElementOptions} />
+            
+            <button 
+                type="submit" 
+                disabled={loading || !stripe} 
+                className={`payment-button ${loading ? 'loading' : ''}`}
+            >
+                {loading ? (
+                    <>
+                        <span className="spinner"></span>
+                        Processing...
+                    </>
+                ) : (
+                    `Pay $${totalAmount} SGD`
                 )}
-            </form>
-        </div>
+            </button>
+            
+            {message && (
+                <div className={`alert alert-${messageType === 'error' ? 'danger' : 'success'}`}>
+                    {message}
+                </div>
+            )}
+        </form>
     );
 };
 

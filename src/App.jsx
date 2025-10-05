@@ -132,8 +132,8 @@ const Loggedin = Boolean(localStorage.getItem("Usertoken"));
             <Route path="/verification/:token" element={<Verification isAdmin={false} />} />
             <Route path="/admin-verification/:token" element={<Verification isAdmin={true} />} />
             <Route path="/payment" element={<Payment />} />
-            <Route path="/order-success" element={<OrderSuccess />} />
-            <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="/payment-success" element={<OrderSuccess />} />
+            <Route path="/payment-success/:orderId" element={<OrderSuccess />} />
             <Route path="/order-details/:orderId" element={<OrderDetails />} />
 
           </Route>
