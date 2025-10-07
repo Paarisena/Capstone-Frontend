@@ -77,7 +77,6 @@ const Profile = () => {
         }
     };
 
-    console.log("Profile Data:", profileData);
 
     return (
         <Container className="py-4">
