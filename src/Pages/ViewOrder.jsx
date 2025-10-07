@@ -13,7 +13,7 @@ const ViewOrder = () => {
         const fetchOrders = async () => {
             try {
                 const userId = localStorage.getItem('userID');
-                const token = localStorage.getItem('UserToken');
+                const token = localStorage.getItem('Usertoken');
                 
                 if (!userId || !token) {
                     navigate('/login');
