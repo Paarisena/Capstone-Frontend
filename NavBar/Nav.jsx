@@ -8,7 +8,7 @@ const NavigationBar = () => {
   const cartCount = Number(localStorage.getItem("cartCount")) || 0;
   const navigate = useNavigate();
   const Username = localStorage.getItem("Username");
-  const Loggedin = Boolean(localStorage.getItem("UserToken"));
+  const Loggedin = Boolean(localStorage.getItem("Usertoken"));
 
   const handleNavLinkClick = () => {
     setExpanded(false);
@@ -16,7 +16,7 @@ const NavigationBar = () => {
 
   const handleLogin = () => {
     if (Loggedin) {
-      localStorage.removeItem("UserToken");
+      localStorage.removeItem("Usertoken");
       window.location.href = "/";
     } else {
       window.location.href = "/login";
