@@ -162,7 +162,7 @@ const OrderDetails = () => {
                 <div className="order-actions">
                     {order.paymentStatus?.toLowerCase() === 'succeeded' && (
                         <button 
-                            onClick={() => navigate('/cart')} 
+                            onClick={() => navigate('/cart/' + localStorage.getItem("userID"))} 
                             className="reorder-button"
                         >
                             Reorder Items

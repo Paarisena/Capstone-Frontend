@@ -180,7 +180,7 @@ const fetchProducts = async()=>{
     }
 
     const fetchProductsPublic = async()=>{
-        const Usertoken = localStorage.getItem('UserToken');
+        const Usertoken = localStorage.getItem('Usertoken');
         const response = await fetch(`${beUrl}/api/public-products`,{
             method:'GET',
             headers:{
@@ -291,7 +291,7 @@ const autoLogout = () => {
         if (token) {
             const resetLogoutTimer=()=>{
             logoutTimer.current = setTimeout(() => {
-                localStorage.removeItem("UserToken");
+                localStorage.removeItem("Usertoken");
                 navigate("/login");
                 localStorage.removeItem("admintoken");
                 navigate("/AdLogin");
@@ -539,7 +539,7 @@ const verification = async (email, verificationCode, isAdmin = false) => {
     try {
         const token = isAdmin ? 
             localStorage.getItem('admintoken') : 
-            localStorage.getItem('UserToken');
+            localStorage.getItem('Usertoken');
 
         const response = await axios.post(`${beUrl}/api/verify-login`, 
             {
@@ -580,7 +580,7 @@ const verification = async (email, verificationCode, isAdmin = false) => {
 // Fix createPaymentIntent
 const createPaymentIntent = async (paymentData) => {
     try {
-        const Usertoken = localStorage.getItem('UserToken');
+        const Usertoken = localStorage.getItem('Usertoken');
         const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, { // Added payments prefix
             method: 'POST',
             headers: {
@@ -606,7 +606,7 @@ const createPaymentIntent = async (paymentData) => {
 // Fix getPayment
 const getPayment = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('UserToken'); // Fixed token name
+        const Usertoken = localStorage.getItem('Usertoken'); // Fixed token name
         const response = await fetch(`${beUrl}/api/payments/payment/${orderId}`, { // Added payments prefix
             method: 'GET',
             headers: {
@@ -631,7 +631,7 @@ const getPayment = async (orderId) => {
 // Fix getUserPayments
 const getUserPayments = async (userId, token) => {
     try {
-        const Usertoken = token || localStorage.getItem('UserToken');
+        const Usertoken = token || localStorage.getItem('Usertoken');
         const response = await fetch(`${beUrl}/api/payments/user/${userId}`, { // Added payments prefix
             method: 'GET',
             headers: {
@@ -683,7 +683,7 @@ const refundPayment = async (refundData) => {
 const processPayment = async (cartItems, totalAmount, shippingAddress) => {
     try {
         const userId = localStorage.getItem('userID');
-        const token = localStorage.getItem('UserToken');
+        const token = localStorage.getItem('Usertoken');
         
         if (!userId || !token) {
             throw new Error('User not authenticated');
@@ -725,7 +725,7 @@ const processPayment = async (cartItems, totalAmount, shippingAddress) => {
 // Fix getPaymentStatus
 const getPaymentStatus = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('UserToken'); // Fixed token name
+        const Usertoken = localStorage.getItem('Usertoken'); // Fixed token name
         const response = await fetch(`${beUrl}/api/payments/status/${orderId}`, { // Added payments prefix
             method: 'GET',
             headers: {
@@ -748,7 +748,7 @@ const getPaymentStatus = async (orderId) => {
 
 const confirmPayment = async (paymentIntentId) => {
     try {
-        const Usertoken = localStorage.getItem('UserToken');
+        const Usertoken = localStorage.getItem('Usertoken');
         const response = await fetch(`${beUrl}/api/payments/confirm`, { // Added payments prefix
             method: 'POST',
             headers: {
@@ -772,7 +772,7 @@ const confirmPayment = async (paymentIntentId) => {
 // Fix orderDetails
 const orderDetails = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('UserToken');
+        const Usertoken = localStorage.getItem('Usertoken');
         const response = await fetch(`${beUrl}/api/payments/order-details/${orderId}`, { // Added payments prefix
             method: 'GET',
             headers: {
