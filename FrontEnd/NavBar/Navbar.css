@@ -1,0 +1,62 @@
+.navbar-title {
+    text-align: center;
+    margin-bottom: 20px; /* Add spacing below the title */
+    font-size: 2rem; /* Adjust font size */
+    font-weight: bold;
+}
+
+/* Center and stack navigation links vertically */
+.navbar-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Add spacing between links */
+    margin-top: 10px; /* Add spacing above the links */
+}
+
+/* Style individual navigation links */
+.navbar-links .nav-link {
+    font-size: 1.2rem; /* Adjust font size */
+    color: #050101; /* Default link color */
+    text-decoration: none;
+    transition: color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+.navbar-links .nav-link:hover {
+    color: #007bff; /* Change color on hover */
+}
+
+/* Adjust button spacing */
+.navbar-custom .mt-4 {
+    margin-top: 30px;
+}
+
+
+
+.fixed-navbar {
+
+    position: absolute; /* Fix the navbar to the top */
+    width: 100%; /* Full width */;
+    bottom: 52.8rem; /* Position it below the title */
+    z-index: 1000; /* Ensure it stays above other content */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional shadow for better visibility */
+    margin: 0;  /* Remove default margin */
+    padding: 0; /* Remove default padding */
+     /* Ensure padding is included in width */
+    overflow: hidden;
+}
+
+/* Title Section */
+.title-section {
+    position: absolute;
+    width: 100%; /* Full width */
+    bottom: 54.8rem;
+    background-color: #f8f9fa; /* Match the navbar background */
+    border-bottom: 1px solid #ddd; /* Optional border for separation */
+    margin: 0; /* Remove default margin */
+    z-index: 999;
+    padding: 600px; /* Add vertical padding */
+    box-sizing: border-box; /* Ensure padding is included in width */
+    overflow: hidden;
+}
+
