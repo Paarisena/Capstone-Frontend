@@ -830,7 +830,7 @@ const usePaymentStatusListener = (orderId, onStatusUpdate) => {
     useEffect(() => {
         if (!orderId) return;
 
-        const socket = io(import.meta.env.VITE_BE_URL || 'http://localhost:8080');
+        const socket = io(import.meta.env.VITE_BE_URL);
 
         console.log('🔄 Listening for payment updates for order:', orderId);
 
