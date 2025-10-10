@@ -53,16 +53,47 @@ const Verification = ({ email: initialEmail, isAdmin = false, onVerificationSucc
       const response = await verification(email, verificationCode, isAdmin);
       
       if (response.success) {
+        console.log('✅ Verification successful:', response);
+        
+        // ✅ Store authentication data from verification response
+        if (response.token) {
+          localStorage.setItem('Usertoken', response.token);
+          console.log('🔑 Auth token stored from verification');
+        }
+        
+        if (response.user) {
+          localStorage.setItem('userID', response.user._id || response.user.id);
+          localStorage.setItem('userName', response.user.name || response.user.username);
+          console.log('👤 User data stored:', response.user._id);
+        }
+        
+        // ✅ Also store admin token if it's admin verification
+        if (isAdmin && response.adminToken) {
+          localStorage.setItem('AdminToken', response.adminToken);
+          console.log('👨‍💼 Admin token stored');
+        }
+        
         toast.success(`${isAdmin ? 'Admin' : 'User'} verification successful!`, {
           position: "top-right",
           autoClose: 2000,
+          onClose: () => {
+            // ✅ Navigate after toast closes
+            if (onVerificationSuccess) {
+              onVerificationSuccess();
+            }
+            
+            // ✅ Enhanced navigation with authentication check
+            console.log('🎯 Navigating to dashboard...');
+            const targetRoute = isAdmin ? '/admin/dashboard' : '/profile';
+            navigate(targetRoute, { 
+              replace: true,
+              state: { 
+                fromVerification: true,
+                timestamp: new Date().toISOString()
+              }
+            });
+          }
         });
-        if (onVerificationSuccess) {
-          onVerificationSuccess();
-        }
-        setTimeout(() => {
-          navigate(isAdmin ? '/admin/dashboard' : '/profile');
-        }, 2000);
       } else {
         setError(response.message || "Verification failed");
         toast.error(response.message || "Verification failed", {

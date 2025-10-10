@@ -804,7 +804,8 @@ const pollPaymentStatus = async (paymentIntentId, maxAttempts = 30) => {
         try {
             const response = await fetch(`${beUrl}/api/payments/check-status/${paymentIntentId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('UserToken')}`
+                    'Authorization': `Bearer ${localStorage.getItem('Usertoken')}`,
+                    'Content-Type': 'application/json'
                 }
             });
             
@@ -850,9 +851,9 @@ const usePaymentStatusListener = (orderId, onStatusUpdate) => {
             console.log('🔗 Connected to payment status updates');
         });
 
-        socket.on('disconnect', () => {
-            console.log('❌ Disconnected from payment status updates');
-        });
+        // socket.on('disconnect', () => {
+        //     console.log('❌ Disconnected from payment status updates');
+        // });
 
         // Cleanup on unmount
         return () => {
