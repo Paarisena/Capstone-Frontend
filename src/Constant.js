@@ -539,7 +539,7 @@ const verification = async (email, verificationCode, isAdmin = false) => {
     try {
         const token = isAdmin ? 
             localStorage.getItem('admintoken') : 
-            localStorage.getItem('Usertoken');
+            localStorage.getItem('UserToken');
 
         const response = await axios.post(`${beUrl}/api/verify-login`, 
             {
