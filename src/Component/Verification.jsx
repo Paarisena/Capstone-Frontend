@@ -61,7 +61,7 @@ const Verification = ({ email: initialEmail, isAdmin = false, onVerificationSucc
           onVerificationSuccess();
         }
         setTimeout(() => {
-          navigate(isAdmin ? '/admin/dashboard' : '/profile');
+          navigate(isAdmin ? '/AdLogin' : '/Login');
         }, 2000);
       } else {
         setError(response.message || "Verification failed");
@@ -138,6 +138,7 @@ const Verification = ({ email: initialEmail, isAdmin = false, onVerificationSucc
                     type="submit" 
                     disabled={isSubmitting || !email || verificationCode.length !== 6}
                     className="w-100 mb-3"
+                    
                   >
                     {isSubmitting ? "Verifying..." : "Verify Account"}
                   </Button>
@@ -145,7 +146,7 @@ const Verification = ({ email: initialEmail, isAdmin = false, onVerificationSucc
                   <div className="text-center">
                     <Button 
                       variant="link" 
-                      onClick={() => navigate(isAdmin ? '/AdLogin' : '/Login')}
+                      onClick={() => navigate(isAdmin ? '/AdLogin' : '/login')}
                       className="text-decoration-none"
                     >
                       Back to {isAdmin ? 'Admin' : 'User'} Login

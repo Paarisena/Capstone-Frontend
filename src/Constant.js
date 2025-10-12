@@ -464,11 +464,13 @@ const AddProfile = async (data, Usertoken) =>{
     return responseData;
 }
 
-const fetchUserProfile = async (Usertoken) => {
+const fetchUserProfile = async () => {
+    const userToken = localStorage.getItem('Usertoken');
     const response = await fetch(`${beUrl}/api/userProfile`, {
         method: 'GET',
         headers: {
-            Authorization: `Bearer ${Usertoken}`,
+            Authorization: `Bearer ${userToken}`,
+            'Content-Type': 'application/json'
         },
     });
 
@@ -539,7 +541,7 @@ const verification = async (email, verificationCode, isAdmin = false) => {
     try {
         const token = isAdmin ? 
             localStorage.getItem('admintoken') : 
-            localStorage.getItem('UserToken');
+            localStorage.getItem('Usertoken');
 
         const response = await axios.post(`${beUrl}/api/verify-login`, 
             {
