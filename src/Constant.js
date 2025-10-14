@@ -213,32 +213,26 @@ const fetchProducts = async()=>{
         }
         return responseData;
     }
-    const addProduct = async(Data)=>{
+    const addProduct = async(Data) => {
+    const admintoken = localStorage.getItem('admintoken');
+    if (!admintoken) throw new Error('Admin authentication required. Please log in as admin.');
 
-        
-        // if (!token) {
-        //     throw new Error('Token not found in localStorage');
-        // }
-        const Admintoken = localStorage.getItem('admintoken');
-        const response = await fetch(`${beUrl}/api/addProducts`,{
-            method:'POST',
-            headers:{
-                'Authorization': `Bearer ${Admintoken}`,
-                
-                
-    },
-    body: Data instanceof FormData ? Data : JSON.stringify(Data),
-    
-})
-const responseData = await response.json();
-if (!response.ok) {
-    console.log('Error:', responseData);
-    throw new Error(`Error ${response.status}: ${responseData.message}`);
-}
+    const response = await fetch(`${beUrl}/api/addProducts`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${admintoken}` },
+        body: Data
+    });
 
-
-return responseData;
-
+    const responseData = await response.json();
+    if (!response.ok) {
+        if (response.status === 401) {
+            localStorage.removeItem('admintoken');
+            localStorage.removeItem('userID');
+            throw new Error('Admin session expired. Please log in again.');
+        }
+        throw new Error(`Error ${response.status}: ${responseData.message || 'Failed to add product'}`);
+    }
+    return responseData;
 }
 
 const deleteProduct = async(id)=>{

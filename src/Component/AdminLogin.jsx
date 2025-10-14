@@ -28,12 +28,15 @@ function AdLogin() {
     setIsLoading(true);
     
     try {
+      console.log('Attempting admin login...'); // Debug log
       const data = await AdminLogin({ email, password });
+      console.log('Login response:', data); // Debug log
 
       if (data.requiresVerification) {
         setIsEmailVerified(false);
         setNeedsVerification(true);
         
+        console.log('Showing verification toast...'); // Debug log
         // Show toast before navigation
         toast.warning('Please verify your email to complete login', {
           position: "top-right",
@@ -42,7 +45,7 @@ function AdLogin() {
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          theme: "light"
+          theme: "colored"
         });
 
         // Add slight delay before navigation
@@ -58,17 +61,36 @@ function AdLogin() {
         return;
       } else if (data.exp && data.exp * 1000 < Date.now()) {
         localStorage.removeItem('admintoken');
-        toast.error('Session expired, please login again');
+        console.log('Showing session expired toast...'); // Debug log
+        toast.error('Session expired, please login again', {
+          position: "top-right",
+          theme: "colored"
+        });
       } else if (data.token) {
         localStorage.setItem('admintoken', data.token);
-        toast.success('Login successful');
+        console.log('Showing success toast...'); // Debug log
+        toast.success('Login successful', {
+          position: "top-right",
+          theme: "colored"
+        });
         navigate('/admin/add');
       } else {
-        toast.error('Invalid credentials');
+        console.log('Showing invalid credentials toast...'); // Debug log
+        toast.error('Invalid credentials', {
+          position: "top-right",
+          theme: "colored"
+        });
       }
        
     } catch (err) {
-      toast.error('Login failed. Please check your credentials.');
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      if (err.message && err.message.includes('Too many')) {
+        errorMessage = '⏰ Too many login attempts! Please wait 15 minutes.';
+        toast.warning(errorMessage, { autoClose: 8000 });
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +100,6 @@ function AdLogin() {
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={2000} />
       <Container fluid className="admin-login-container min-vh-100 d-flex align-items-center justify-content-center py-3">
         <Row className="justify-content-center w-100">
           <Col xs={12} sm={10} md={7} lg={5} xl={4}>
