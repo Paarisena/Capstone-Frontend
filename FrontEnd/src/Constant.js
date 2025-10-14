@@ -1,13 +1,17 @@
-
 import { useEffect,useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { io } from 'socket.io-client';
+import axios from 'axios';
 
 const beUrl = import.meta.env.VITE_BE_URL;
+
+ 
 const gettoken = () =>{
     return localStorage.getItem('token')
 }
 const token  = gettoken()
 const userRegister = async(data) =>{
+    try{
     const response = await fetch(`${beUrl}/api/register`,{
         body:JSON.stringify(data),
         method:'POST',
@@ -17,18 +21,32 @@ const userRegister = async(data) =>{
         
     })
 
-    
-    const responseData = await response.json();
-    if (!response.ok) {
-        console.log('Error:', responseData);
-        throw new Error(`Error ${response.status}: ${responseData.message}`);
-    }
+  const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
 
-    return responseData;
+        // Handle verification requirement in response
+        if (responseData.requiresVerification) {
+            return {
+                ...responseData,
+                requiresVerification: true,
+                message: 'Admin registration successful. Please verify your email to continue.'
+            };
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Admin registration error:', error);
+        throw error;
+    }
 }
 
+
 const userLogin = async(data)=>{
-    const response = await fetch(`${beUrl}/api/login`,{
+    try{
+        const response = await fetch(`${beUrl}/api/login`,{
         body:JSON.stringify(data),
         method:'POST',
         headers:{
@@ -36,45 +54,93 @@ const userLogin = async(data)=>{
         },
         
     })
-    const ResponseData = await response.json();
-     if(!response.ok){
-        console.log('Error',ResponseData)
-        throw new Error(`Error ${response.status}:${ResponseData.message}`) 
-     }  
-     return ResponseData;
-}
+     const responseData = await response.json();
 
-const AdminLogin = async(data)=>{
-    const response = await fetch(`${beUrl}/api/AdminLogin`,{
-        body:JSON.stringify(data),
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
+        // Log response for debugging
+        console.log('Login response:', responseData);
+
+        if (!response.ok) {
+            if (responseData.requiresVerification) {
+                return {
+                    requiresVerification: true,
+                    message: responseData.message,
+                    email: data.email
+                };
+            }
+            throw new Error(responseData.message || 'Login failed');
         }
-})
-const ResponseData = await response.json();
-     if(!response.ok){
-        console.log('Error',ResponseData)
-        throw new Error(`Error ${response.status}:${ResponseData.message}`) 
-     }  
-     return ResponseData;
+
+        return responseData;
+    } catch (error) {
+        console.error('Login error:', error);
+        throw error;
+    }
 }
 
-const AdminRegister = async(data)=>{
-    const response = await fetch(`${beUrl}/api/AdminRegister`,{
-        body:JSON.stringify(data),
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
+
+const AdminLogin = async(data) => {
+    try {
+        const response = await fetch(`${beUrl}/api/AdminLogin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        const responseData = await response.json();
+
+        // Log response for debugging
+        console.log('Login response:', responseData);
+
+        if (!response.ok) {
+            if (responseData.requiresVerification) {
+                return {
+                    requiresVerification: true,
+                    message: responseData.message,
+                    email: data.email
+                };
+            }
+            throw new Error(responseData.message || 'Login failed');
         }
-})
-const responseData = await response.json();
-if (!response.ok) {
-    console.log('Error:', responseData);
-    throw new Error(`Error ${response.status}: ${responseData.message}`);
+
+        return responseData;
+    } catch (error) {
+        console.error('Login error:', error);
+        throw error;
+    }
 }
 
-return responseData;
+const AdminRegister = async(data) => {
+    try {
+        const response = await fetch(`${beUrl}/api/AdminRegister`, {
+            body: JSON.stringify(data),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        // Handle verification requirement in response
+        if (responseData.requiresVerification) {
+            return {
+                ...responseData,
+                requiresVerification: true,
+                message: 'Admin registration successful. Please verify your email to continue.'
+            };
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Admin registration error:', error);
+        throw error;
+    }
 }
 
 const profiles = async(data)=>{
@@ -96,10 +162,12 @@ return responseData;
 
 
 const fetchProducts = async()=>{
-    const response = await fetch(`${beUrl}/api/products`,{
+    const userId = localStorage.getItem('userID');
+    const Admintoken = localStorage.getItem('admintoken');
+    const response = await fetch(`${beUrl}/api/products?adminId=${userId}`,{
         method:'GET',
         headers:{
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${Admintoken}`,
         }
     })
     const responseData = await response.json();
@@ -111,41 +179,71 @@ const fetchProducts = async()=>{
     return responseData;
     }
 
-    const addProduct = async(Data)=>{
-
-        
-        // if (!token) {
-        //     throw new Error('Token not found in localStorage');
-        // }
-        const response = await fetch(`${beUrl}/api/addProducts`,{
-            method:'POST',
+    const fetchProductsPublic = async()=>{
+        const Usertoken = localStorage.getItem('Usertoken');
+        const response = await fetch(`${beUrl}/api/public-products`,{
+            method:'GET',
             headers:{
-                'Authorization': `Bearer ${token}`,
-                "Cache-Control": "no-cache",
-                
-    },
-    body: Data instanceof FormData ? Data : JSON.stringify(Data),
-    
-})
-const responseData = await response.json();
-if (!response.ok) {
-    console.log('Error:', responseData);
-    throw new Error(`Error ${response.status}: ${responseData.message}`);
-}
+                'Authorization': `Bearer ${Usertoken}`,
+            }
+        })
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
 
+        return responseData;
+    }
 
-return responseData;
+    const editProduct = async(id, updatedData) => {
+        const Admintoken = localStorage.getItem('admintoken');
+        const response = await fetch(`${beUrl}/api/edit/${id}`, {
+            method: 'PUT',
+            headers: {  
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${Admintoken}`,
+            },
+            body: JSON.stringify(updatedData),
+        });
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+        return responseData;
+    }
+    const addProduct = async(Data) => {
+    const admintoken = localStorage.getItem('admintoken');
+    if (!admintoken) throw new Error('Admin authentication required. Please log in as admin.');
 
+    const response = await fetch(`${beUrl}/api/addProducts`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${admintoken}` },
+        body: Data
+    });
+
+    const responseData = await response.json();
+    if (!response.ok) {
+        if (response.status === 401) {
+            localStorage.removeItem('admintoken');
+            localStorage.removeItem('userID');
+            throw new Error('Admin session expired. Please log in again.');
+        }
+        throw new Error(`Error ${response.status}: ${responseData.message || 'Failed to add product'}`);
+    }
+    return responseData;
 }
 
 const deleteProduct = async(id)=>{
-    if (!token) {
+    const tokens = localStorage.getItem('admintoken');
+    if (!tokens) {
         throw new Error('Token not found in localStorage');
     }
     const response = await fetch(`${beUrl}/api/delete/${id}`,{
         method:'DELETE',
         headers:{
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${tokens}`,
 
         }
     })
@@ -187,7 +285,7 @@ const autoLogout = () => {
         if (token) {
             const resetLogoutTimer=()=>{
             logoutTimer.current = setTimeout(() => {
-                localStorage.removeItem("UserToken");
+                localStorage.removeItem("Usertoken");
                 navigate("/login");
                 localStorage.removeItem("admintoken");
                 navigate("/AdLogin");
@@ -262,14 +360,16 @@ const deleteReview = async (id, name) => {
     return responseData;
 }
 
-const addProductToCart = async (user, id, token) => {
+
+
+const addProductToCart = async (userId, itemId, Usertoken) => {
     const response = await fetch(`${beUrl}/api/cart/add`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${Usertoken}`,
         },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ userId, itemId }),
     });
 
     const responseData = await response.json();
@@ -281,14 +381,15 @@ const addProductToCart = async (user, id, token) => {
     return responseData;
 };
 
-const updateCart = async (id, quantity) => {
-    const response = await fetch(`${beUrl}/api/cart/update/${id}`, {
+const updateCart = async (itemId, quantity, Usertoken) => {
+    const userId = localStorage.getItem('userID');
+    const response = await fetch(`${beUrl}/api/cart/update/${itemId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${Usertoken}`,
         },
-        body: JSON.stringify({ quantity }),
+        body: JSON.stringify({ userId,quantity }),
     });
 
     const responseData = await response.json();
@@ -300,11 +401,11 @@ const updateCart = async (id, quantity) => {
     return responseData;
 }
 
-const getUserCart = async () => {
-    const response = await fetch(`${beUrl}/api/cart`, {
+const getUserCart = async (userId, Usertoken) => {
+    const response = await fetch(`${beUrl}/api/cart?userId=${userId}`, {
         method: 'GET',
         headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${Usertoken}`,
         },
     });
 
@@ -317,4 +418,447 @@ const getUserCart = async () => {
     return responseData;
 }
 
-export {userRegister,userLogin,AdminRegister,AdminLogin, profiles, fetchProducts,addProduct,deleteProduct,singleProduct,autoLogout, reviewProduct, fetchReviews, deleteReview, addProductToCart, updateCart, getUserCart}
+const deleteFromCart = async(userId,itemId,Usertoken) =>{
+    
+    const response = await fetch(`${beUrl}/api/cart/delete/${itemId}`, {
+        method: "DELETE",
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${Usertoken}`,
+        },
+        body: JSON.stringify({ userId }),
+        
+    });
+
+    const responseData = await response.json();
+    if (!response.ok) {
+        console.log('Error:', responseData);
+        throw new Error(`Error ${response.status}: ${responseData.message}`);
+    }
+
+    return responseData;
+}
+
+const AddProfile = async (data, Usertoken) =>{
+    const response = await fetch(`${beUrl}/api/profile`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${Usertoken}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    const responseData = await response.json();
+    if (!response.ok) {
+        console.log('Error:', responseData);
+        throw new Error(`Error ${response.status}: ${responseData.message}`);
+    }
+
+    return responseData;
+}
+
+const fetchUserProfile = async () => {
+    const userToken = localStorage.getItem('Usertoken');
+    const response = await fetch(`${beUrl}/api/userProfile`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${userToken}`,
+            'Content-Type': 'application/json'
+        },
+    });
+
+    const responseData = await response.json();
+    if (!response.ok) {
+        console.log('Error:', responseData);
+        throw new Error(`Error ${response.status}: ${responseData.message}`);
+    }
+
+    return responseData;
+};
+
+const forgotPassword = async (email, isAdmin = false) => {
+    try {
+        const response = await fetch(`${beUrl}/api/forgot-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                email,
+                isAdmin 
+            }),
+        });
+        
+        const responseData = await response.json();
+        if (!response.ok) {
+            throw new Error(responseData.message || 'Failed to process request');
+        }
+
+        return {
+            ...responseData,
+            resetLink: isAdmin ? responseData.adminResetLink : responseData.resetLink
+        };
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        throw error;
+    }
+};
+
+const resetPassword = async(token, newPassword, isAdmin = false) => {
+    try {
+        const response = await axios.post(`${beUrl}/api/reset-password`, {
+            token,
+            newPassword,
+            isAdmin
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        return {
+            success: true,
+            message: `${isAdmin ? 'Admin' : 'User'} password reset successful`,
+            ...response.data
+        };
+    } catch (error) {
+        console.error('Reset password error:', error.response?.data || error.message);
+        throw new Error(
+            error.response?.data?.message || 
+            'Failed to reset password. Please try again.'
+        );
+    }
+}
+
+const verification = async (email, verificationCode, isAdmin = false) => {
+    try {
+        const token = isAdmin ? 
+            localStorage.getItem('admintoken') : 
+            localStorage.getItem('Usertoken');
+
+        const response = await axios.post(`${beUrl}/api/verify-login`, 
+            {
+                email,
+                verificationCode,
+                isAdmin
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            }
+        );
+
+        console.log('Verification response:', response.data);
+        
+        // If verification code is null, it means we're requesting a new code
+        if (!verificationCode && response.data.requiredNewCode) {
+            return {
+                success: true,
+                message: 'New verification code sent to your email'
+            };
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error('Verification error:', error.response?.data || error);
+        throw error.response?.data || {
+            success: false,
+            message: verificationCode ? 
+                'Failed to verify code. Please try again.' : 
+                'Failed to send verification code.'
+        };
+    }
+}
+
+// Fix createPaymentIntent
+const createPaymentIntent = async (paymentData) => {
+    try {
+        const Usertoken = localStorage.getItem('Usertoken');
+        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, { // Added payments prefix
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Usertoken}`,
+            },
+            body: JSON.stringify(paymentData),
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Payment Intent Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Create payment intent error:', error);
+        throw error;
+    }
+};
+
+// Fix getPayment
+const getPayment = async (orderId) => {
+    try {
+        const Usertoken = localStorage.getItem('Usertoken'); // Fixed token name
+        const response = await fetch(`${beUrl}/api/payments/payment/${orderId}`, { // Added payments prefix
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${Usertoken}`,
+                'Content-Type': 'application/json'
+            },
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Get Payment Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Get payment error:', error);
+        throw error;
+    }
+};
+
+// Fix getUserPayments
+const getUserPayments = async (userId, token) => {
+    try {
+        const Usertoken = token || localStorage.getItem('Usertoken');
+        const response = await fetch(`${beUrl}/api/payments/user/${userId}`, { // Added payments prefix
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${Usertoken}`,
+                'Content-Type': 'application/json'
+            },
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Get User Payments Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Get user payments error:', error);
+        throw error;
+    }
+}
+
+// Fix refundPayment
+const refundPayment = async (refundData) => {
+    try {
+        const Admintoken = localStorage.getItem('admintoken');
+        const response = await fetch(`${beUrl}/api/payments/refund`, { // Added payments prefix
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Admintoken}`,
+            },
+            body: JSON.stringify(refundData),
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Refund Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Refund payment error:', error);
+        throw error;
+    }
+};
+
+// Fix processPayment
+const processPayment = async (cartItems, totalAmount, shippingAddress) => {
+    try {
+        const userId = localStorage.getItem('userID');
+        const token = localStorage.getItem('Usertoken');
+        
+        if (!userId || !token) {
+            throw new Error('User not authenticated');
+        }
+
+        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, { // Added payments prefix
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId,
+                amount: parseFloat(totalAmount),
+                currency: 'sgd',
+                items: cartItems.map(item => ({
+                    productId: item.productId || item._id,
+                    quantity: item.quantity,
+                    price: item.Price || item.price,
+                    name: item.productName || item.name
+                })),
+                shippingAddress
+            })
+        });
+
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Process payment error:', error);
+        throw error;
+    }
+};
+
+// Fix getPaymentStatus
+const getPaymentStatus = async (orderId) => {
+    try {
+        const Usertoken = localStorage.getItem('Usertoken'); // Fixed token name
+        const response = await fetch(`${beUrl}/api/payments/status/${orderId}`, { // Added payments prefix
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${Usertoken}`,
+            },
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Get Payment Status Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Get payment status error:', error);
+        throw error;
+    }
+};
+
+const confirmPayment = async (paymentIntentId) => {
+    try {
+        const Usertoken = localStorage.getItem('Usertoken');
+        const response = await fetch(`${beUrl}/api/payments/confirm`, { // Added payments prefix
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Usertoken}`,
+            },
+            body: JSON.stringify({ paymentIntentId }),
+        }); 
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Confirm Payment Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+        return responseData;
+    } catch (error) {
+        console.error('Confirm payment error:', error);
+        throw error;
+    }
+};
+
+// Fix orderDetails
+const orderDetails = async (orderId) => {
+    try {
+        const Usertoken = localStorage.getItem('Usertoken');
+        const response = await fetch(`${beUrl}/api/payments/order-details/${orderId}`, { // Added payments prefix
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${Usertoken}`,
+            },
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            console.log('Get Order Details Error:', responseData);
+            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Get order details error:', error);
+        throw error;
+    }
+};
+
+// Get all payments for a user (alias for getUserPayments for compatibility)
+const getAllPayments = async (userId, token) => {
+    return await getUserPayments(userId, token);
+};
+
+// In Constant.js - Add polling function
+const pollPaymentStatus = async (paymentIntentId, maxAttempts = 30) => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            const response = await fetch(`${beUrl}/api/payments/check-status/${paymentIntentId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('Usertoken')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.paymentStatus !== 'pending') {
+                return result;
+            }
+            
+            // Wait 2 seconds before next attempt
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }
+    
+    throw new Error('Payment status check timeout');
+};
+
+
+const usePaymentStatusListener = (orderId, onStatusUpdate) => {
+    useEffect(() => {
+        if (!orderId) return;
+
+        const socket = io(import.meta.env.VITE_BE_URL);
+
+        console.log('🔄 Listening for payment updates for order:', orderId);
+
+        // Listen for payment status updates
+        socket.on('payment_status_update', (data) => {
+            console.log('📨 Payment status update received:', data);
+            
+            // Check if this update is for our order
+            if (data.orderId === orderId || data.transactionId === orderId) {
+                console.log('✅ Status update matches our order');
+                onStatusUpdate(data.paymentStatus, data.payment);
+            }
+        });
+
+        // Handle connection events
+        socket.on('connect', () => {
+            console.log('🔗 Connected to payment status updates');
+        });
+
+        // socket.on('disconnect', () => {
+        //     console.log('❌ Disconnected from payment status updates');
+        // });
+
+        // Cleanup on unmount
+        return () => {
+            console.log('🧹 Cleaning up socket connection');
+            socket.disconnect();
+        };
+    }, [orderId, onStatusUpdate]);
+};
+
+// Export the function
+export { userRegister,userLogin,AdminRegister,AdminLogin, profiles, fetchProducts,addProduct,deleteProduct,singleProduct,autoLogout, reviewProduct, fetchReviews, deleteReview, addProductToCart, updateCart, getUserCart, deleteFromCart, fetchProductsPublic,editProduct, AddProfile, fetchUserProfile, forgotPassword, resetPassword, verification,createPaymentIntent, confirmPayment, getPayment, getUserPayments, 
+    refundPayment, processPayment, getPaymentStatus, orderDetails, getAllPayments, pollPaymentStatus, usePaymentStatusListener };

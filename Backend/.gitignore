@@ -73,3 +73,6 @@ uploads/
 
 # PM2 ecosystem file
 ecosystem.config.js
+.env
+.test.jsx
+tests/authentication.test.js

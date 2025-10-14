@@ -1,19 +1,34 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
+import { admin } from '../DB/model.js';
 
-const adminAuth = (req, res, next) => {
-    try{
-        const {token} = req.headers
-        if(!token){
-            return res.json({message:"Unauthorized login"})
-        } 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET)
-        if (token_decode !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD) {
-            return res.status.json({ message: "Unauthorized access" });
+const adminAuth = async (req, res, next) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
         }
-     next()   
-    }catch(error){
-        console.log(error)
-        return res.status(500).json({message:"Internal server error"})
+
+        const decoded = jwt.verify(token, process.env.SECRET_TOKEN);
+        const adminUser = await admin.findById(decoded.id);
+
+        if (!adminUser || adminUser.isVerified === false) {
+            return res.status(401).json({ success: false, message: 'Invalid or unverified admin.' });
+        }
+
+        req.user = {
+            id: adminUser._id.toString(),
+            email: adminUser.email,
+            name: adminUser.name,
+            isAdmin: true
+        };
+
+        next();
+    } catch (error) {
+        console.error('AdminAuth error:', error);
+        const message = error.name === 'TokenExpiredError' ? 'Token expired' : 'Invalid token';
+        res.status(401).json({ success: false, message });
     }
-}
-export default adminAuth
+};
+
+export default adminAuth;

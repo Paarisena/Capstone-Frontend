@@ -35,14 +35,14 @@
 
 .fixed-navbar {
 
-    position: absolute; /* Fix the navbar to the top */
-    width: 100%; /* Full width */;
-    bottom: 52.8rem; /* Position it below the title */
-    z-index: 1000; /* Ensure it stays above other content */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional shadow for better visibility */
-    margin: 0;  /* Remove default margin */
-    padding: 0; /* Remove default padding */
-     /* Ensure padding is included in width */
+    position: fixed; 
+    height: 100px;
+    width: 99.8%; ;
+    bottom: 53.5rem; 
+    z-index: 1000; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+    margin: 0;  
+    padding: 0; 
     overflow: hidden;
 }
 

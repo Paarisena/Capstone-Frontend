@@ -1,240 +1,513 @@
 import { useState, useEffect } from "react";
-import { fetchProducts } from "../Constant";
-import { useParams } from "react-router-dom";
-import { Form, Card, Button, Carousel } from "react-bootstrap";
-import { reviewProduct, fetchReviews, deleteReview } from "../Constant";
-import { addProductToCart } from "../Constant";
-import { use } from "react";
-
-
+import { fetchProductsPublic } from "../Constant";
+import { useParams, useNavigate } from "react-router-dom";
+import { Form, Card, Button, Carousel, Container, Row, Col, Spinner, Alert } from "react-bootstrap";
+import { reviewProduct, fetchReviews, deleteReview, addProductToCart } from "../Constant";
+import { StarFill, Star, CartPlus, CreditCard } from 'react-bootstrap-icons';
+import { Currency } from "../App";
 
 const InnerView = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
-    const [cartItems, setCartItems] = useState({});
-    const [quantities, setQuantities] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [actionStatus, setActionStatus] = useState({ message: '', type: '' });
+    const [activeImage, setActiveImage] = useState(0);
 
     const Username = localStorage.getItem("Username") || "";
+    const [review, setReview] = useState({ name: Username, rating: 5, comment: "" });
+    const isLoggedIn = localStorage.getItem("Usertoken") ? true : false;
 
-    const [review,setReview] = useState({name:Username,rating: 5 ,comment:""})
-    const Isloggedin = localStorage.getItem("Usertoken") ? true : false;
-
-    
-
-    
     const handleReviewChange = (e) => {
-            const {name, value} = e.target;
-            setReview((prevReview) => ({
-                ...prevReview,
-                [name]: value
-            }));
-        }
-    
-    const handleAddToCart = async (e, id) => {
-        e.preventDefault();
-        try {
-            const response = await addProductToCart({ itemId: id });
-            if (response.success) {
-                setCartItems((prevItems) => ({
-                    ...prevItems,
-                    [id]: response.cartItem
-                }));
-                setQuantities((prev) => ({
-                    ...prev,
-                    [id]: response.cartItem.quantity
-                }));
-            } else {
-                console.log("Error adding product to cart:", response.message);
-            }
-        } catch (error) {
-            console.log("Error adding product to cart:", error);
-        }
+        const { name, value } = e.target;
+        setReview((prevReview) => ({
+            ...prevReview,
+            [name]: value
+        }));
     };
-    
 
-const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    if (Isloggedin) {
-        try {
-            const data = await reviewProduct(id, review); // data is already JSON
-            console.log(data);
-            if (data.success) {
-               setReview({ name: Username, rating: 5, comment: "" });
-               const refreshed = await fetchReviews(id);
-               if (refreshed.success) setReviews(refreshed.reviews);
-               alert("Review submitted successfully");
-          } else {
-           alert("Failed to submit review");
-      }
-        } catch (error) {
-            alert("Error submitting review: " + error);
-        }
-    }
-};
-
-    const handleDeleteReview = async(e, name) =>{
-        e.preventDefault();
-        if(Isloggedin){
-            try{
-                const response = await deleteReview(id, name);
-                console.log(response);
-                if (response && response.success) {
-                    // Re-fetch reviews from backend
-                    const refreshed = await fetchReviews(id);
-                    console.log(refreshed);
-                    if (refreshed.success) setReviews(refreshed.reviews);
-                    alert("Review deleted successfully");
-                } else {
-                    alert("Failed to delete review ");
-                }
-                }catch (error){
-                alert("Error deleting review: " + error);
-                }
-
-            }
-    }
+    const handleAddToCart = async () => {
+        const userId = localStorage.getItem("userID");
+        const token = localStorage.getItem("Usertoken");
         
-    
-useEffect(() => {
-    const Reviews = async () => {
+        if (!isLoggedIn) {
+            setActionStatus({
+                message: "Please log in to add items to the cart",
+                type: "danger"
+            });
+            return;
+        }
+        
         try {
-            const response = await fetchReviews(id);
+            setActionStatus({ message: "Adding to cart...", type: "info" });
+            const response = await addProductToCart(userId, id, token);
+            
             if (response.success) {
-                setReviews(response.reviews);
-                setReview({ name: Username, rating: 5, comment: "" });
+                setActionStatus({
+                    message: "Product added to cart successfully!",
+                    type: "success"
+                });
+                
+                // Clear status message after 3 seconds
+                setTimeout(() => {
+                    setActionStatus({ message: '', type: '' });
+                }, 3000);
             } else {
-                alert("Failed to fetch reviews:", response.message);
+                setActionStatus({
+                    message: response.message || "Failed to add to cart",
+                    type: "danger"
+                });
             }
         } catch (error) {
-            alert("Error fetching reviews:", error);
+            console.error("Error adding product to cart:", error);
+            setActionStatus({
+                message: "Something went wrong. Please try again",
+                type: "danger"
+            });
         }
     };
-Reviews();
-}, [id]);
+
+    const handleBuyNow = () => {
+        if (!isLoggedIn) {
+            setActionStatus({
+                message: "Please log in to proceed with purchase",
+                type: "danger"
+            });
+            return;
+        }
+        
+        handleAddToCart();
+        navigate('/cart');
+    };
+
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        if (!isLoggedIn) return;
+
+        try {
+            setActionStatus({ message: "Submitting review...", type: "info" });
+            const data = await reviewProduct(id, { ...review, name: Username });
+            
+            if (data.success) {
+                setReview({ name: Username, rating: 5, comment: "" });
+                const refreshed = await fetchReviews(id);
+                if (refreshed.success) setReviews(refreshed.reviews);
+                
+                setActionStatus({
+                    message: "Review submitted successfully!",
+                    type: "success"
+                });
+                
+                // Clear status after 3 seconds
+                setTimeout(() => {
+                    setActionStatus({ message: '', type: '' });
+                }, 3000);
+            } else {
+                setActionStatus({
+                    message: "Failed to submit review",
+                    type: "danger"
+                });
+            }
+        } catch (error) {
+            console.error("Error submitting review:", error);
+            setActionStatus({
+                message: "Error submitting review",
+                type: "danger"
+            });
+        }
+    };
+
+    const handleDeleteReview = async () => {
+        if (!isLoggedIn) return;
+
+        try {
+            setActionStatus({ message: "Deleting review...", type: "info" });
+            const response = await deleteReview(id, Username);
+            
+            if (response && response.success) {
+                const refreshed = await fetchReviews(id);
+                if (refreshed.success) setReviews(refreshed.reviews);
+                
+                setActionStatus({
+                    message: "Review deleted successfully!",
+                    type: "success"
+                });
+                
+                // Clear status after 3 seconds
+                setTimeout(() => {
+                    setActionStatus({ message: '', type: '' });
+                }, 3000);
+            } else {
+                setActionStatus({
+                    message: "Failed to delete review",
+                    type: "danger"
+                });
+            }
+        } catch (error) {
+            console.error("Error deleting review:", error);
+            setActionStatus({
+                message: "Error deleting review",
+                type: "danger"
+            });
+        }
+    };
+    
     useEffect(() => {
-        const fetch = async () => {
+        const loadReviews = async () => {
             try {
-                const response = await fetchProducts();
-                const filteredProduct = Array.isArray(response.products)
-                    ? response.products.find((p) => String(p._id) === String(id))
-                    : response.products;
-                setProduct(filteredProduct);
+                const response = await fetchReviews(id);
+                if (response.success) {
+                    setReviews(response.reviews);
+                    setReview({ name: Username, rating: 5, comment: "" });
+                } else {
+                    console.error("Failed to fetch reviews:", response.message);
+                }
             } catch (error) {
-                alert("Error fetching product:", error);
+                console.error("Error fetching reviews:", error);
             }
         };
-        fetch();
-    }, [id]);
+
+        const loadProduct = async () => {
+            try {
+                setLoading(true);
+                const response = await fetchProductsPublic();
+                if (!response || !response.products) {
+                    throw new Error("Invalid response format");
+                }
+                
+                const filteredProduct = Array.isArray(response.products)
+                    ? response.products.find((p) => String(p._id) === String(id))
+                    : null;
+                    
+                if (!filteredProduct) {
+                    throw new Error("Product not found");
+                }
+                
+                setProduct(filteredProduct);
+                setError(null);
+            } catch (error) {
+                console.error("Error fetching product:", error);
+                setError(error.message || "Failed to load product");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadProduct();
+        loadReviews();
+    }, [id, Username]);
     
-    if (!product) {
-        return <p className="text-center text-danger">Loading...</p>;
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
+                <Spinner animation="border" role="status" variant="primary">
+                    <span className="visually-hidden">Loading...</span>
+                </Spinner>
+            </div>
+        );
+    }
+
+    if (error || !product) {
+        return (
+            <Container className="py-4">
+                <Alert variant="danger">
+                    {error || "Product not found"}
+                </Alert>
+                <div className="text-center mt-3">
+                    <Button variant="outline-primary" onClick={() => navigate('/')}>
+                        Return to Home
+                    </Button>
+                </div>
+            </Container>
+        );
     }
 
     const images = Array.isArray(product.Image) && product.Image.length > 0
         ? product.Image
         : [product.Images || product.image || "placeholder.jpg"];
 
+    // Calculate average rating from reviews
+    const averageRating = reviews.length > 0 
+        ? (reviews.reduce((acc, r) => acc + Number(r.rating), 0) / reviews.length).toFixed(1)
+        : "No ratings";
+
     return (
-
-            <div className="my-4" style={{ position:"absolute", top:"110px", maxWidth:"700px", margin:"0 auto"}} >
-                <Carousel style={{left:"30rem", width:"30rem"}}>
-                    {images.map((img, idx) => (
-                        <Carousel.Item key={idx}>
-                            <Card.Img
-                                variant="top"
-                                src={img || "placeholder.jpg"}
-                                alt={product.productName || product.name || "Product Image"}
-                                style={{  height: "600px", width: "50rem",  position: "relative", right: "10rem" }}
-                            />
-                        </Carousel.Item>
-                    ))}
-                </Carousel>
-                <Card.Body style={{ position:"relative", left:"56rem", bottom:"20rem"}}>
-                    <Card.Title style={{bottom:"6rem", fontSize:"2rem", textDecoration:"underline", padding:"1rem"}}>{product.productName || product.name}</Card.Title>
-                    <Card.Text style={{bottom:"3rem"}}>
-                        <strong>Price:</strong> ₹{product.Price || product.price}
-                    </Card.Text>
-                    <Card.Text style={{bottom:"3rem"}}>
-                        <strong>Description:</strong> {product.productDescription || product.description}
-                    </Card.Text>
-                
-                    <div className="d-flex gap-2" style={{position:"relative", left:"10rem", bottom:"-2rem"}}>
-                        <Button variant="success" size="sm" style={{ left:"64rem"}} onClick={(e) => handleAddToCart(e, product._id)}>Add to Cart</Button>
-                        <Button variant="primary" size="sm"style={{left:"64rem"}}>Buy Now</Button>
-                    </div>
-                </Card.Body>
-
-
-                <h3 style={{position:"relative", right:"3rem", bottom:"4rem", textDecoration:"underline"}}>Customer Review</h3>
-                <div style={{position:"absolute", left:"0rem", top:"50rem", margin:"0 auto", width:"200rem", backgroundColor:"white"}}>   
-                    {reviews.length === 0}
-                    {reviews.map((review, index) => (
-                        <div key={index} style={{position:"relative", right:"75rem"}}>
-                            <h6>{review.name}</h6>
-                            <div style={{position:"relative", left:"1rem"}}>
-                                {Array.from({length: 5},(_, i)=>(
-                                    <span key={i} style={{ color:i < Number(review.rating) ? "#ffc107" : "#e4e5e9", fontSize: "1.2rem"}}>
-                                        ★
-                                    </span>
-                                    
-                                ))}
-                                </div>
-                            <p style={{position:"relative", left:"1rem", bottom:"-0.5rem",}}>{review.comment}</p>
-
-                        </div>
-                    ))}
-                    {Isloggedin ?(
-                        
-                        <>
-                        <p>
-                        {/* <strong>{Username}</strong> */}
-                        </p>
-                        <Form onSubmit={handleReviewSubmit} style={{  maxWidth: "900px"}}>
-                            
-                         <Form.Group className="mb-3" controlId="reviewRating" style={{position:"relative", left:"30rem", width:"400px"}}>
-            <Form.Label>Rating</Form.Label>
-            <Form.Select
-                name="rating"
-                value={review.rating}
-                onChange={handleReviewChange}
-                required
-            >
-                <option value="5">5 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="3">3 Stars</option>
-                <option value="2">2 Stars</option>
-                <option value="1">1 Star</option>
-            </Form.Select>
-        </Form.Group>
-        <Form.Group className="mb-23" controlId="reviewComment" style={{position:"relative", left:"30rem", width:"400px"}}>
-            <Form.Label>Your Review</Form.Label>
-            <Form.Control
-                as="textarea"
-                name="comment"
-                value={review.comment}
-                onChange={handleReviewChange}
-                placeholder="Your Review"
-                required
-                rows={3}
-            />
-            <br />
-        </Form.Group>
-        <Button variant="primary" type="submit" style={{position:"relative", left:"13rem"}}>
-            Submit Review
-        </Button>
-        <Button variant="danger" onClick={(e)=>handleDeleteReview (e, review.name)}>Delete</Button>
-        <br />
-    </Form>
-    </>
-) : (
-    <p style={{position:"relative", right:"60rem"}}>Please log in to leave a review.</p>
-)}
+        <div className="bg-white">
+            <style jsx>{`
+                @media (max-width: 573px) {
+                    .product-container {
+                        position: relative !important;
+                        top: 2rem !important;
+                    }
+                    
+                    .product-info {
+                        position: relative !important;
+                        top: 1rem !important;
+                    }
+                    
+                    .rating-section {
+                        position: relative !important;
+                        left: 0 !important;
+                        justify-content: center;
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .action-buttons {
+                        position: relative !important;
+                        left: 0 !important;
+                        justify-content: center;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                    }
+                    
+                    .action-buttons .btn {
+                        width: 50%;
+                        align-self: center;
+                        margin: 0 !important;
+                    }
+                    
+                    .product-title {
+                        text-align: center;
+                        font-size: 1.25rem;
+                    }
+                    
+                    .product-price {
+                        text-align: center;
+                    }
+                    
+                    .reviews-section {
+                        margin-top: 1rem;
+                    }
+                    
+                    .review-form-container {
+                        margin-top: 1rem;
+                    }
+                }
+            `}</style>
+            
+            {actionStatus.message && (
+                <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1050, maxWidth: "300px" }}>
+                    <Alert 
+                        variant={actionStatus.type} 
+                        className="shadow-sm py-2 px-3"
+                        dismissible
+                        onClose={() => setActionStatus({ message: '', type: '' })}
+                    >
+                        {actionStatus.message}
+                    </Alert>
                 </div>
-            </div>
+            )}
+            
+            <Container className="py-4 product-container" style={{ position: 'relative', top: '7rem' }}>
+                <Row className="mb-4">
+                    {/* Product Images */}
+                    <Col lg={5} md={6} className="mb-4 mb-md-0">
+                        <div className="bg-light rounded p-2 text-center">
+                            <img
+                                src={images[activeImage] || "placeholder.jpg"}
+                                alt={`${product.productName || "Product"} - Main Image`}
+                                className="img-fluid"
+                                style={{ maxHeight: "400px", objectFit: "contain" }}
+                            />
+                        </div>
+                        
+                        {images.length > 1 && (
+                            <Row className="g-2 mt-2">
+                                {images.map((img, idx) => (
+                                    <Col key={idx} xs={3}>
+                                        <div 
+                                            onClick={() => setActiveImage(idx)}
+                                            className={`rounded overflow-hidden ${activeImage === idx ? 'border border-primary' : 'border'}`}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <img
+                                                src={img || "placeholder.jpg"}
+                                                alt={`Thumbnail ${idx + 1}`}
+                                                className="img-fluid"
+                                                style={{ height: "60px", width: "100%", objectFit: "cover" }}
+                                            />
+                                        </div>
+                                    </Col>
+                                ))}
+                            </Row>
+                        )}
+                    </Col>
+                    
+                    {/* Product Information */}
+                    <Col lg={7} md={6} className="product-info" style={{ position: 'relative', top: '6rem' }}>
+                        <h1 className="h3 fw-bold mb-4 product-title">{product.productName || product.name}</h1>
 
+                        <div className="mb-3 d-flex align-items-center rating-section" style={{position: 'relative', left:'18rem'}}>
+                            {averageRating !== "No ratings" ? (
+                                <>
+                                    <div className="me-2">
+                                        {[...Array(5)].map((_, i) => (
+                                            <span key={i} className="me-1">
+                                                {i < Math.floor(averageRating) ? (
+                                                    <StarFill className="text-warning" size={16} />
+                                                ) : (
+                                                    <Star className="text-secondary" size={16} />
+                                                )}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <span className="text-secondary small">
+                                        {averageRating} ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-secondary small">No reviews yet</span>
+                            )}
+                        </div>
+                        
+                        <h2 className="h4 fw-bold text-primary mb-3 product-price">{Currency}{product.Price || product.price}</h2>
+                        
+                        <div className="mb-3">
+                            <h5 className="fw-bold mb-2 h6">Description</h5>
+                            <p className="text-secondary">{product.productDescription || product.description || "No description available for this product."}</p>
+                        </div>
+                        
+                        <div className="d-flex mt-3 action-buttons" style={{ position: 'relative', left: '16rem' }}>
+                            <Button 
+                                variant="primary" 
+                                className="me-2 d-flex align-items-center"
+                                onClick={handleAddToCart}
+                            >
+                                <CartPlus className="me-1" size={16} /> Add to Cart
+                            </Button>
+                            <Button 
+                                variant="success" 
+                                className="d-flex align-items-center"
+                                onClick={handleBuyNow}
+                            >
+                                <CreditCard className="me-1" size={16} /> Buy Now
+                            </Button>
+                        </div>
+                    </Col>
+                </Row>
+                
+                {/* Compact Reviews Section */}
+                <div className="mt-3 pt-2 border-top reviews-section">
+                    <h3 className="h5 fw-bold mb-2">Customer Reviews</h3>
+                    
+                    <Row>
+                        {/* Review List */}
+                        <Col md={7} className="mb-2 pe-md-4">
+                            <div className="bg-light rounded p-2">
+                                {reviews.length > 0 ? (
+                                    <div style={{ maxHeight: "200px", overflowY: "auto" }} className="pe-2">
+                                        {reviews.map((review, index) => (
+                                            <div key={index} className={`${index > 0 ? 'border-top pt-2 mt-2' : ''}`}>
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div className="d-flex align-items-center">
+                                                        <span className="fw-medium small me-2">{review.name}</span>
+                                                        <div>
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <span key={i} style={{ fontSize: "10px" }} className="me-1">
+                                                                    {i < Number(review.rating) ? (
+                                                                        <span className="text-warning">★</span>
+                                                                    ) : (
+                                                                        <span className="text-secondary">☆</span>
+                                                                    )}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    {review.name === Username && (
+                                                        <Button 
+                                                            variant="link" 
+                                                            size="sm" 
+                                                            className="text-danger p-0"
+                                                            style={{ fontSize: "0.7rem" }}
+                                                            onClick={handleDeleteReview}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                                <p className="text-secondary mb-0" style={{ fontSize: "0.8rem" }}>{review.comment}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-2">
+                                        <p className="text-secondary mb-0" style={{ fontSize: "0.8rem" }}>No reviews yet. Be the first to review!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </Col>
+                        
+                        {/* Review Form - More compact */}
+                        <Col md={5} className="mb-2 review-form-container">
+                            {isLoggedIn ? (
+                                <div className="bg-light rounded p-2">
+                                    <Form onSubmit={handleReviewSubmit} className="compact-form">
+                                        <div className="d-flex align-items-center mb-2">
+                                            <Form.Label className="mb-0 me-2" style={{ fontSize: "0.8rem" }}>Rating:</Form.Label>
+                                            <Form.Select
+                                                name="rating"
+                                                value={review.rating}
+                                                onChange={handleReviewChange}
+                                                required
+                                                size="sm"
+                                                style={{ fontSize: "0.8rem", height: "calc(1.5em + 0.5rem + 2px)" }}
+                                                className="w-auto"
+                                                
+                                            >
+                                                <option value="5">5 Stars</option>
+                                                <option value="4">4 Stars</option>
+                                                <option value="3">3 Stars</option>
+                                                <option value="2">2 Stars</option>
+                                                <option value="1">1 Star</option>
+                                            </Form.Select>
+                                        </div>
+                                        
+                                        <Form.Control
+                                            as="textarea"
+                                            name="comment"
+                                            value={review.comment}
+                                            onChange={handleReviewChange}
+                                            placeholder="Write your review here..."
+                                            required
+                                            rows={2}
+                                            size="sm"
+                                            style={{ fontSize: "0.8rem" }}
+                                            className="mb-2"
+                                        />
+                                        
+                                        <div className="text-end">
+                                            <Button 
+                                                variant="primary" 
+                                                type="submit" 
+                                                size="sm" 
+                                                style={{ fontSize: "0.8rem", padding: "0.2rem 0.5rem" }}
+                                            >
+                                                Submit Review
+                                            </Button>
+                                        </div>
+                                    </Form>
+                                </div>
+                            ) : (
+                                <div className="bg-light rounded p-2 text-center">
+                                    <small className="text-muted d-block mb-2">Please log in to leave a review</small>
+                                    <Button 
+                                        variant="outline-primary"
+                                        onClick={() => navigate('/login')}
+                                        size="sm"
+                                        style={{ fontSize: "0.8rem", padding: "0.2rem 0.5rem" }}
+                                    >
+                                        Login to Review
+                                    </Button>
+                                </div>
+                            )}
+                        </Col>
+                    </Row>
+                </div>
+            </Container>
+        </div>
     );
+};
 
-    }
-
-export default InnerView
+export default InnerView;

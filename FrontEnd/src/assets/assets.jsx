@@ -1,6 +1,8 @@
-import home_Img from '../assets/home_Img.png'; // Adjust the path as necessary
+import Gallery from '../assets/Gallery.jpg'; 
+import Gallery2 from '../assets/Gallery2.png';
 
 export const assets = {
-  home_Img: home_Img,
+  home_Img: Gallery,
+  home_Img2: Gallery2,
   // Add more assets here as needed
 };

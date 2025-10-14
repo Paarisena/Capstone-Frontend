@@ -6,7 +6,7 @@
 } */
 
 #root {
-  width: 100%; /* Make the content span the full width */
+  width: 99.2%; /* Make the content span the full width */
   margin: 0; /* Remove auto-centering */
   padding: 0; /* Remove extra padding */
   text-align: center; /* Align text to the left */
@@ -49,17 +49,18 @@
 }
 
 
-.title-section {
-  position: absolute; /* Make the title section sticky */
-  bottom: 14.8rem; /* Position it below the navbar */
-  background-color: #fdfdfd; /* Light background color */
-  border-bottom: 1px solid #ffffff; /* Optional border for separation */
-  padding: 10px 20px; /* Add padding for spacing */
+.title-section { 
+  position: relative; 
+  bottom: 55rem !important; /* Adjusted to match the navbar position */
+  height: fit-content !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #ffffff; 
+  padding: 10px 20px; 
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 999; /* Ensure it stays above other content */ 
-}
+  z-index: 1; 
+} 
 
 .title-section h1 {
   font-size: 2.5rem; /* Adjust font size */
@@ -75,3 +76,17 @@
   padding: 0.5rem 1rem; /* Add padding for better appearance */
 }
 
+.main-content-wrapper {
+  padding-bottom: 6rem; /* Add significant padding at the bottom of all content */
+}
+
+/* Ensure headings are always visible */
+h1, h2, h3, h4, h5, h6 {
+  position: relative;
+  z-index: 2; /* Higher than footer */
+}
+
+.app-container {
+  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
+  min-height: 100vh;
+}
