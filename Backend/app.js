@@ -15,11 +15,18 @@ import payments from "./Login page/Payments.js"
 import ProductRouter from "./Routes/ProductRoutes.js"
 import path from "path"
 import{ fileURLToPath } from "url"
+import { logCompatibilityStatus } from "./Middleware/expressCompatibility.js"
 
 
 dotenv.config()
 cloudinaryConfig()
+
+// Log Express compatibility status
+logCompatibilityStatus()
+
 const app = express()
+
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 8000;
 
 // Security middleware
@@ -61,8 +68,38 @@ app.use('/api/AdminLogin', authLimiter);
 app.use('/api/AdminRegister', authLimiter);
 app.use('/api', apiLimiter);
 
-// Sanitize user input
-app.use(mongoSanitize());
+// Sanitize user input (Express 4.x compatible)
+try {
+    app.use(mongoSanitize());
+} catch (error) {
+    console.log('⚠️  Using fallback sanitization due to Express compatibility');
+    // Fallback sanitization middleware
+    app.use((req, res, next) => {
+        if (req.body) {
+            req.body = sanitizeInput(req.body);
+        }
+        if (req.query) {
+            req.query = sanitizeInput(req.query);
+        }
+        if (req.params) {
+            req.params = sanitizeInput(req.params);
+        }
+        next();
+    });
+}
+
+// Simple sanitization function
+const sanitizeInput = (obj) => {
+    if (obj === null || typeof obj !== 'object') return obj;
+    
+    const sanitized = Array.isArray(obj) ? [] : {};
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key) && !key.startsWith('$')) {
+            sanitized[key] = typeof obj[key] === 'object' ? sanitizeInput(obj[key]) : obj[key];
+        }
+    }
+    return sanitized;
+};
 
 const server = createServer(app);
 const io = new Server(server, {

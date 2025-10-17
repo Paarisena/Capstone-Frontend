@@ -29,6 +29,9 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "express"
         update-types: ["version-update:semver-major"]
+      # Keep Express at 4.x until middleware compatibility is ensured
+      - dependency-name: "express"
+        versions: [">=5.0.0"]
     allow:
       # Prioritize security updates
       - dependency-type: "all"
