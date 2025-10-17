@@ -1,0 +1,91 @@
+# 🤖 Dependabot Configuration for Art Vista Gallery
+# This file configures Dependabot to automatically create pull requests for dependency updates
+
+version: 2
+updates:
+  # Backend Dependencies (Node.js/npm)
+  - package-ecosystem: "npm"
+    directory: "/Backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Paarisena"
+    assignees:
+      - "Paarisena"
+    commit-message:
+      prefix: "chore(backend):"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "backend"
+      - "security"
+    ignore:
+      # Ignore major version updates for critical packages that might break functionality
+      - dependency-name: "mongoose"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "express"
+        update-types: ["version-update:semver-major"]
+    allow:
+      # Prioritize security updates
+      - dependency-type: "all"
+    target-branch: "main"
+    versioning-strategy: "increase-if-necessary"
+
+  # Frontend Dependencies (Node.js/npm)
+  - package-ecosystem: "npm"
+    directory: "/FrontEnd"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Paarisena"
+    assignees:
+      - "Paarisena"
+    commit-message:
+      prefix: "chore(frontend):"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "security"
+    ignore:
+      # Ignore major version updates for React and Vite that might require code changes
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+    allow:
+      # Prioritize security updates
+      - dependency-type: "all"
+    target-branch: "main"
+    versioning-strategy: "increase-if-necessary"
+
+  # GitHub Actions Dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 2
+    reviewers:
+      - "Paarisena"
+    assignees:
+      - "Paarisena"
+    commit-message:
+      prefix: "chore(ci):"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci/cd"
