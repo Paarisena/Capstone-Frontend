@@ -2,7 +2,7 @@ import express from 'express';
 import {addProduct,listProducts,deleteProduct, listPublicProducts, editProduct, addProfile, fetchProfile, sendEmail} from '../Login page/Dashboard.js';
 import upload from '../Middleware/Multer.js';
 import adminAuth from '../Middleware/adminAuth.js';
-import { addToCart, updateCart,getUserCart, deleteFromCart } from '../Login page/CartModel.js';
+import { addToCart, updateCart,getUserCart, deleteFromCart, directPurchase, getUserOrders } from '../Login page/CartModel.js';
 
 const ProductRouter = express.Router();
 
@@ -17,6 +17,8 @@ ProductRouter.post('/cart/add', addToCart);
 ProductRouter.put('/cart/update/:itemId', updateCart);
 ProductRouter.get('/cart', getUserCart);
 ProductRouter.delete('/cart/delete/:itemId', deleteFromCart);
+ProductRouter.post('/direct-purchase', directPurchase);
+ProductRouter.get('/user-orders', getUserOrders);
 ProductRouter.post('/send-email', sendEmail);
 
 
