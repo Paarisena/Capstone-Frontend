@@ -292,7 +292,6 @@ paymentSchema.pre('save', function (next) {
 
 const payment = new mongoose.model("Payment", paymentSchema, "Payments");
 
-// Add this after the payment schema
 
 const orderSchema = new mongoose.Schema({
     orderId: {
@@ -355,5 +354,5 @@ const orderSchema = new mongoose.Schema({
 
 const Order = new mongoose.model("Order", orderSchema, "Orders");
 
-// Update the export to include Order
+
 export {user, admin, Database, ReviewDatabase, profile, Verification, payment, Order}
