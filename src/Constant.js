@@ -439,12 +439,14 @@ const deleteFromCart = async(userId,itemId,Usertoken) =>{
     return responseData;
 }
 
-const AddProfile = async (data, Usertoken) =>{
+const AddProfile = async (data) =>{
+    const Usertoken = localStorage.getItem('Usertoken');
     const response = await fetch(`${beUrl}/api/profile`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${Usertoken}`,
+            'Content-Type': 'application/json',
+            
         },
         body: JSON.stringify(data),
     });
@@ -859,6 +861,65 @@ const usePaymentStatusListener = (orderId, onStatusUpdate) => {
     }, [orderId, onStatusUpdate]);
 };
 
+// Direct Purchase Function
+const createDirectPurchase = async (purchaseData) => {
+    try {
+        const token = localStorage.getItem('Usertoken');
+        if (!token) throw new Error('Authentication required');
+
+        console.log("📤 Sending purchase data:", purchaseData);
+
+        const response = await fetch(`${beUrl}/api/direct-purchase`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(purchaseData)  // Make sure this is the flat object
+        });
+
+        const responseData = await response.json();
+        
+        if (!response.ok || !responseData.success) {
+            throw new Error(responseData.message || 'Failed to create direct purchase');
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Create direct purchase error:', error);
+        throw error;
+    }
+};
+
+// Get User Orders Function
+const getUserOrderHistory = async () => {
+    try {
+        const userId = localStorage.getItem('userID');
+        const token = localStorage.getItem('Usertoken');
+        
+        if (!userId || !token) throw new Error('Authentication required');
+
+        const response = await fetch(`${beUrl}/api/user-orders?userId=${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const responseData = await response.json();
+        
+        if (!response.ok || !responseData.success) {
+            throw new Error(responseData.message || 'Failed to fetch orders');
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error('Get orders error:', error);
+        throw error;
+    }
+};
+
 // Export the function
 export { userRegister,userLogin,AdminRegister,AdminLogin, profiles, fetchProducts,addProduct,deleteProduct,singleProduct,autoLogout, reviewProduct, fetchReviews, deleteReview, addProductToCart, updateCart, getUserCart, deleteFromCart, fetchProductsPublic,editProduct, AddProfile, fetchUserProfile, forgotPassword, resetPassword, verification,createPaymentIntent, confirmPayment, getPayment, getUserPayments, 
-    refundPayment, processPayment, getPaymentStatus, orderDetails, getAllPayments, pollPaymentStatus, usePaymentStatusListener };
+    refundPayment, processPayment, getPaymentStatus, orderDetails, getAllPayments, pollPaymentStatus, usePaymentStatusListener, createDirectPurchase, getUserOrderHistory };

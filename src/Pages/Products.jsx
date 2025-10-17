@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchProductsPublic } from "../Constant";
 import { useParams, useNavigate } from "react-router-dom";
 import { Form, Card, Button, Carousel, Container, Row, Col, Spinner, Alert } from "react-bootstrap";
-import { reviewProduct, fetchReviews, deleteReview, addProductToCart } from "../Constant";
+import { reviewProduct, fetchReviews, deleteReview, addProductToCart, createDirectPurchase } from "../Constant";
 import { StarFill, Star, CartPlus, CreditCard } from 'react-bootstrap-icons';
 import { Currency } from "../App";
 
@@ -69,17 +69,64 @@ const InnerView = () => {
         }
     };
 
-    const handleBuyNow = () => {
+    const handleBuyNow = async () => {
+        const userId = localStorage.getItem("userID");
+        const token = localStorage.getItem("Usertoken");
+
+        console.log("🔍 Debug handleBuyNow:");
+        console.log("userId from localStorage:", userId);
+        console.log("token from localStorage:", token ? "Present" : "Missing");
+        console.log("isLoggedIn:", isLoggedIn);
+        
         if (!isLoggedIn) {
             setActionStatus({
                 message: "Please log in to proceed with purchase",
                 type: "danger"
             });
+            setTimeout(() => {
+                navigate('/login');
+            }, 2000);
             return;
         }
         
-        handleAddToCart();
-        navigate('/cart');
+        try {
+            setActionStatus({ message: "Redirecting to payment...", type: "info" });
+            
+            // Create cart-like item structure for the payment page
+            const buyNowItem = {
+                _id: id,
+                productId: id,
+                itemId: id,
+                productName: product.productName,
+                Price: parseFloat(product.Price),
+                Image: images, // Pass the full images array
+                quantity: 1,
+                Category: product.Category
+            };
+
+            const totalAmount = parseFloat(product.Price);
+
+            console.log("📦 Buy now item:", buyNowItem);
+            console.log("💰 Total amount:", totalAmount);
+            
+            // Navigate directly to payment page with product data
+            setTimeout(() => {
+                navigate('/payment', { 
+                    state: { 
+                        cartItems: [buyNowItem], // Pass as array like cart does
+                        totalAmount: totalAmount,
+                        fromBuyNow: true // Flag to indicate this is from buy now
+                    }
+                });
+            }, 1000);
+            
+        } catch (error) {
+            console.error("Error in buy now:", error);
+            setActionStatus({
+                message: "Something went wrong. Please try again",
+                type: "danger"
+            });
+        }
     };
 
     const handleReviewSubmit = async (e) => {

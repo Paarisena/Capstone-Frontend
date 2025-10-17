@@ -211,8 +211,21 @@ const Payment = () => {
         fetchProfileAddress();
     }, []);
 
-    // Only fetch if no data was passed from cart
+    // Add this useEffect for handling Buy Now flow
     useEffect(() => {
+        // Check if this is from Buy Now
+        if (location.state?.fromBuyNow) {
+            console.log("💰 Payment from Buy Now detected");
+            console.log("📦 Items:", location.state.cartItems);
+            console.log("💰 Total:", location.state.totalAmount);
+            
+            // Set the items and total directly
+            setCartItems(location.state.cartItems);
+            setTotalAmount(location.state.totalAmount);
+            return; // Skip the cart fetching
+        }
+        
+        // Original cart fetching logic for regular checkout
         if (location.state?.cartItems?.length > 0) return; 
         
         (async () => {
@@ -247,7 +260,7 @@ const Payment = () => {
                 setLoading(false);
             }
         })();
-    }, []);
+    }, [location.state]); // Add location.state as dependency
 
     const handleAddressChange = (field, value) => {
         setShippingAddress(prev => ({
