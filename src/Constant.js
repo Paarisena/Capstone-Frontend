@@ -161,41 +161,73 @@ return responseData;
 }
 
 
-const fetchProducts = async()=>{
-    const userId = localStorage.getItem('userID');
-    const Admintoken = localStorage.getItem('admintoken');
-    const response = await fetch(`${beUrl}/api/products?adminId=${userId}`,{
-        method:'GET',
-        headers:{
-            'Authorization': `Bearer ${Admintoken}`,
+const fetchProducts = async () => {
+    try {
+        const userId = localStorage.getItem('userID');
+        const Admintoken = localStorage.getItem('admintoken');
+        
+        if (!Admintoken) {
+            throw new Error('Admin authentication required');
         }
-    })
-    const responseData = await response.json();
-    if (!response.ok) {
-        console.log('Error:', responseData);
-        throw new Error(`Error ${response.status}: ${responseData.message}`);
-    }
-    
-    return responseData;
-    }
 
-    const fetchProductsPublic = async()=>{
-        const Usertoken = localStorage.getItem('Usertoken');
-        const response = await fetch(`${beUrl}/api/public-products`,{
-            method:'GET',
-            headers:{
-                'Authorization': `Bearer ${Usertoken}`,
+        const response = await fetch(`${beUrl}/api/products?adminId=${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${Admintoken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             }
-        })
-        const responseData = await response.json();
-        if (!response.ok) {
-            console.log('Error:', responseData);
-            throw new Error(`Error ${response.status}: ${responseData.message}`);
+        });
+
+        // Log raw response for debugging
+        const text = await response.text();
+        console.log('Raw API Response:', text);
+
+        try {
+            // Attempt to parse the response
+            const data = JSON.parse(text);
+            return data;
+        } catch (parseError) {
+            console.error('Response parsing error:', parseError);
+            console.error('Raw response:', text);
+            throw new Error('Invalid JSON response from server');
         }
-
-        return responseData;
+    } catch (error) {
+        console.error('Fetch Products Error:', error);
+        throw error;
     }
+}
 
+const fetchProductsPublic = async () => {
+    try {
+        const Usertoken = localStorage.getItem('Usertoken');
+        const response = await fetch(`${beUrl}/api/public-products`, {
+            method: 'GET',
+            headers: {
+                'Authorization': Usertoken ? `Bearer ${Usertoken}` : '',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Log raw response for debugging
+        const text = await response.text();
+        console.log('Raw API Response:', text);
+
+        try {
+            // Attempt to parse the response
+            const data = JSON.parse(text);
+            return data;
+        } catch (parseError) {
+            console.error('Response parsing error:', parseError);
+            console.error('Raw response:', text);
+            throw new Error('Invalid JSON response from server');
+        }
+    } catch (error) {
+        console.error('Fetch Public Products Error:', error);
+        throw error;
+    }
+}
     const editProduct = async(id, updatedData) => {
         const Admintoken = localStorage.getItem('admintoken');
         const response = await fetch(`${beUrl}/api/edit/${id}`, {
