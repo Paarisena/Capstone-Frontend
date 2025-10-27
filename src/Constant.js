@@ -199,42 +199,83 @@ const fetchProducts = async () => {
 
 const fetchProductsPublic = async () => {
     try {
-        const Usertoken = localStorage.getItem('Usertoken');
+        console.log('🚀 Fetching public products...');
+
         const response = await fetch(`${beUrl}/api/public-products`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
             }
         });
 
-        // First, check if response is ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        console.log('📥 Response status:', response.status);
+        console.log('📤 Response headers:', Object.fromEntries(response.headers.entries()));
+
+        // Handle 500 errors first
+        if (response.status === 500) {
+            console.error('🔴 Server error detected');
+            return {
+                success: false,
+                data: [],
+                error: 'Server error occurred, please try again later'
+            };
         }
 
-        // Log headers for debugging
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-        // Get the raw text
-        const text = await response.text();
-        console.log('Raw API Response:', text);
-
-        // If response is empty, return empty array
-        if (!text) {
-            return { success: true, data: [] };
+        // Get response text
+        let text;
+        try {
+            text = await response.text();
+            console.log('📄 Raw response:', text);
+        } catch (textError) {
+            console.error('🔴 Error reading response:', textError);
+            return {
+                success: false,
+                data: [],
+                error: 'Failed to read server response'
+            };
         }
 
+        // Handle empty response
+        if (!text || text.trim() === '') {
+            console.log('⚠️ Empty response received');
+            return {
+                success: false,
+                data: [],
+                error: 'No data received from server'
+            };
+        }
+
+        // Try to parse JSON
         try {
             const data = JSON.parse(text);
-            return data;
+            return {
+                success: true,
+                data: Array.isArray(data) ? data : data.data || [],
+                message: data.message
+            };
         } catch (parseError) {
-            console.error('Response parsing error:', parseError);
-            console.error('Raw response:', text);
-            throw new Error('Invalid JSON response from server');
+            console.error('🔴 JSON Parse Error:', {
+                error: parseError.message,
+                rawResponse: text
+            });
+            return {
+                success: false,
+                data: [],
+                error: 'Invalid data format received'
+            };
         }
     } catch (error) {
-        console.error('Fetch Public Products Error:', error);
-        throw error;
+        console.error('🔴 Network Error:', {
+            message: error.message,
+            url: `${beUrl}/api/public-products`
+        });
+        return {
+            success: false,
+            data: [],
+            error: 'Network error, please check your connection'
+        };
     }
 }
     const editProduct = async(id, updatedData) => {
