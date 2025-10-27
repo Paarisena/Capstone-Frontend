@@ -206,12 +206,9 @@ const fetchProductsPublic = async () => {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Cache-Control': 'no-cache',
-                'Origin': 'https://www.avgallery.shop'
+                'Accept': 'application/json'
             },
-            mode: 'cors',
-            credentials: 'include'
+            mode: 'cors'
         };
 
         console.log('Request options:', options);
