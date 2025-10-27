@@ -174,7 +174,6 @@ const fetchProducts = async () => {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${Admintoken}`,
-                'Accept': 'application/json',
                 'Content-Type': 'application/json'
             }
         });
@@ -204,8 +203,8 @@ const fetchProductsPublic = async () => {
         const response = await fetch(`${beUrl}/api/public-products`, {
             method: 'GET',
             headers: {
-                'Authorization': Usertoken ? `Bearer ${Usertoken}` : '',
-                'Accept': 'application/json',
+                'Authorization':  `Bearer ${Usertoken}`,
+
                 'Content-Type': 'application/json'
             }
         });
