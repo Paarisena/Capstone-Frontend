@@ -203,18 +203,30 @@ const fetchProductsPublic = async () => {
         const response = await fetch(`${beUrl}/api/public-products`, {
             method: 'GET',
             headers: {
-                'Authorization':  `Bearer ${Usertoken}`,
-
-                'Content-Type': 'application/json'
+                'Authorization': Usertoken ? `Bearer ${Usertoken}` : '',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
         });
 
-        // Log raw response for debugging
+        // First, check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Log headers for debugging
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+        // Get the raw text
         const text = await response.text();
         console.log('Raw API Response:', text);
 
+        // If response is empty, return empty array
+        if (!text) {
+            return { success: true, data: [] };
+        }
+
         try {
-            // Attempt to parse the response
             const data = JSON.parse(text);
             return data;
         } catch (parseError) {
@@ -832,7 +844,8 @@ const pollPaymentStatus = async (paymentIntentId, maxAttempts = 30) => {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
             const response = await fetch(`${beUrl}/api/payments/check-status/${paymentIntentId}`, {
-                headers: {
+                headers:
+                 {
                     'Authorization': `Bearer ${localStorage.getItem('Usertoken')}`,
                     'Content-Type': 'application/json'
                 }
