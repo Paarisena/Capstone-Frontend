@@ -199,16 +199,23 @@ const fetchProducts = async () => {
 
 const fetchProductsPublic = async () => {
     try {
-        console.log('🚀 Fetching public products...');
+        console.log('🚀 Fetching public products from:', beUrl);
+        console.log('Environment:', import.meta.env);
 
-        const response = await fetch(`${beUrl}/api/public-products`, {
+        const options = {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'Cache-Control': 'no-cache'
-            }
-        });
+                'Cache-Control': 'no-cache',
+                'Origin': 'https://www.avgallery.shop'
+            },
+            mode: 'cors',
+            credentials: 'include'
+        };
+
+        console.log('Request options:', options);
+        const response = await fetch(`${beUrl}/api/public-products`, options);
 
         console.log('📥 Response status:', response.status);
         console.log('📤 Response headers:', Object.fromEntries(response.headers.entries()));
