@@ -203,9 +203,7 @@ const fetchProductsPublic = async () => {
         const response = await fetch(`${beUrl}/api/public-products`, {
             method: 'GET',
             headers: {
-                'Authorization': Usertoken ? `Bearer ${Usertoken}` : '',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
             }
         });
 
