@@ -199,8 +199,7 @@ const fetchProducts = async () => {
 
 const fetchProductsPublic = async () => {
     try {
-        console.log('🚀 Fetching public products from:', beUrl);
-        console.log('Environment:', import.meta.env);
+          
 
         const options = {
             method: 'GET',
