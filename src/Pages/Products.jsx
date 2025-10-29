@@ -220,12 +220,12 @@ const InnerView = () => {
             try {
                 setLoading(true);
                 const response = await fetchProductsPublic();
-                if (!response || !response.products) {
+                if (!response || !response.data) {
                     throw new Error("Invalid response format");
                 }
-                
-                const filteredProduct = Array.isArray(response.products)
-                    ? response.products.find((p) => String(p._id) === String(id))
+
+                const filteredProduct = Array.isArray(response.data)
+                    ? response.data.find((p) => String(p._id) === String(id))
                     : null;
                     
                 if (!filteredProduct) {

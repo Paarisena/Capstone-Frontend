@@ -199,85 +199,29 @@ const fetchProducts = async () => {
 
 const fetchProductsPublic = async () => {
     try {
-          
-
-        const options = {
+        const response = await fetch(`${beUrl}/api/public-products`, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            mode: 'cors'
-        };
+                'Content-Type': 'application/json'
 
-        console.log('Request options:', options);
-        const response = await fetch(`${beUrl}/api/public-products`, options);
-
-        console.log('📥 Response status:', response.status);
-        console.log('📤 Response headers:', Object.fromEntries(response.headers.entries()));
-
-        // Handle 500 errors first
-        if (response.status === 500) {
-            console.error('🔴 Server error detected');
-            return {
-                success: false,
-                data: [],
-                error: 'Server error occurred, please try again later'
-            };
-        }
-
-        // Get response text
-        let text;
-        try {
-            text = await response.text();
-            console.log('📄 Raw response:', text);
-        } catch (textError) {
-            console.error('🔴 Error reading response:', textError);
-            return {
-                success: false,
-                data: [],
-                error: 'Failed to read server response'
-            };
-        }
-
-        // Handle empty response
-        if (!text || text.trim() === '') {
-            console.log('⚠️ Empty response received');
-            return {
-                success: false,
-                data: [],
-                error: 'No data received from server'
-            };
-        }
-
-        // Try to parse JSON
-        try {
-            const data = JSON.parse(text);
-            return {
-                success: true,
-                data: Array.isArray(data) ? data : data.data || [],
-                message: data.message
-            };
-        } catch (parseError) {
-            console.error('🔴 JSON Parse Error:', {
-                error: parseError.message,
-                rawResponse: text
-            });
-            return {
-                success: false,
-                data: [],
-                error: 'Invalid data format received'
-            };
-        }
-    } catch (error) {
-        console.error('🔴 Network Error:', {
-            message: error.message,
-            url: `${beUrl}/api/public-products`
+            }
         });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch products');
+        }
+
+        const data = await response.json();
+        return {
+            success: true,
+            data: data.products,
+        };
+    } catch (error) {
+        console.error('Error fetching products:', error);
         return {
             success: false,
             data: [],
-            error: 'Network error, please check your connection'
+            error: 'Failed to load products'
         };
     }
 }
@@ -445,9 +389,25 @@ const deleteReview = async (id, name) => {
     return responseData;
 }
 
+const reorderProduct = async (orderId, Usertoken) => {
+    const response = await fetch(`${beUrl}/api/payments/reorder/${orderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${Usertoken}`,
+        },
+    });
 
+    const responseData = await response.json();
+    if (!response.ok) {
+        console.log('Error:', responseData);
+        throw new Error(`Error ${response.status}: ${responseData.message}`);
+    }
+    return responseData;
+}
 
 const addProductToCart = async (userId, itemId, Usertoken) => {
+
     const response = await fetch(`${beUrl}/api/cart/add`, {
         method: 'POST',
         headers: {
@@ -1008,4 +968,4 @@ const getUserOrderHistory = async () => {
 
 // Export the function
 export { userRegister,userLogin,AdminRegister,AdminLogin, profiles, fetchProducts,addProduct,deleteProduct,singleProduct,autoLogout, reviewProduct, fetchReviews, deleteReview, addProductToCart, updateCart, getUserCart, deleteFromCart, fetchProductsPublic,editProduct, AddProfile, fetchUserProfile, forgotPassword, resetPassword, verification,createPaymentIntent, confirmPayment, getPayment, getUserPayments, 
-    refundPayment, processPayment, getPaymentStatus, orderDetails, getAllPayments, pollPaymentStatus, usePaymentStatusListener, createDirectPurchase, getUserOrderHistory };
+    refundPayment, processPayment, getPaymentStatus, orderDetails, getAllPayments, pollPaymentStatus, reorderProduct,usePaymentStatusListener, createDirectPurchase, getUserOrderHistory };

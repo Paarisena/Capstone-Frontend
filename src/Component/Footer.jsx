@@ -99,7 +99,7 @@ const Footer = () => {
           border-top: 1px solid rgba(255, 255, 255, 0.1);
           margin-top: 6rem; /* Significantly increased margin to avoid overlap */
           position: relative;
-          width: 100%;
+          width: 105%;
           clear: both; /* Ensures the footer clears any floating elements */
         }
         

@@ -33,6 +33,7 @@ import Payment from './Pages/Payment.jsx';
 import OrderSuccess from './Pages/orderSucess.jsx';
 import ViewOrder from './Pages/ViewOrder.jsx';
 import OrderDetails from './Pages/OrderDetails.jsx';
+import Reorder from './Pages/Reorder.jsx';
 
 export const Currency = "$";
 
@@ -108,6 +109,7 @@ const Loggedin = Boolean(localStorage.getItem("Usertoken"));
             <Route path="/payment-success" element={<OrderSuccess />} />
             <Route path="/payment-success/:orderId" element={<OrderSuccess />} />
             <Route path="/order-details/:orderId" element={<OrderDetails />} />
+            <Route path="/reorder/:orderId" element={<Reorder />} />
 
           </Route>
         </Routes>

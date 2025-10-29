@@ -112,7 +112,7 @@ const ViewOrder = () => {
                                     View Details
                                 </button>
                                 {order.paymentStatus?.toLowerCase() === 'succeeded' && (
-                                    <button onClick={() => navigate('/cart')}>
+                                    <button onClick={() => navigate(`/reorder/${order.orderId || order._id}`)}>
                                         Reorder
                                     </button>
                                 )}

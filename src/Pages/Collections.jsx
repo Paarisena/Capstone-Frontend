@@ -27,16 +27,16 @@ const Collections = () => {
             setLoading(true);
             const response = await fetchProductsPublic();
 
-            if (!response.products || !Array.isArray(response.products)) {
+            if (!response.data || !Array.isArray(response.data)) {
                 throw new Error("Invalid response format");
             }
 
             // Store all products
-            setAllProducts(response.products);
-            setTotalItems(response.products.length);
+            setAllProducts(response.data);
+            setTotalItems(response.data.length);
 
             // Group products by category
-            const groupedCollections = response.products.reduce((acc, product) => {
+            const groupedCollections = response.data.reduce((acc, product) => {
                 const category = product.category || "1";
                 if (!acc[category]) {
                     acc[category] = [];
@@ -46,7 +46,7 @@ const Collections = () => {
             }, {});
 
             // Add "all" category containing all products
-            groupedCollections["all"] = response.products;
+            groupedCollections["all"] = response.data;
 
             setCollections(groupedCollections);
             

@@ -17,11 +17,11 @@ const Abstract = () => {
         setLoading(true);
         const response = await fetchProductsPublic();
         
-        if (!response || !response.products) {
+        if (!response || !response.data) {
           throw new Error("Invalid response format");
         }
-        
-        const filteredProducts = response.products.filter(
+
+        const filteredProducts = response.data.filter(
           (product) => product.Category === "2"
         );
         
