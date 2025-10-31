@@ -7,7 +7,8 @@ import {
   BoxArrowRight, 
   ChevronLeft, 
   ChevronRight,
-  Palette
+  Palette,
+  ShieldCheck
 } from "react-bootstrap-icons";
 import "./Sidebar.css";
 
@@ -61,6 +62,15 @@ const Sidebar = () => {
             <ListUl size={18} />
           </div>
           {!collapsed && <span className="link-text">Product List</span>}
+        </NavLink>
+        
+        <NavLink to="compliance" className={({ isActive }) => 
+          `sidebar-link ${isActive ? "active-link" : ""}`
+        }>
+          <div className="link-icon">
+            <ShieldCheck size={18} />
+          </div>
+          {!collapsed && <span className="link-text">SOC Compliance</span>}
         </NavLink>
       </Nav>
       

@@ -105,14 +105,16 @@ function AdLogin() {
           <Col xs={12} sm={10} md={7} lg={5} xl={4}>
             <Card className="glass-card border-0 shadow-lg">
               <Card.Header className="text-center py-3">
-              <h3 className="mb-0">ARTVISTA GALLERY</h3>
-              <p className="small mb-0">Admin Portal</p>
+              <h2 className="mb-5" style={{ position: 'relative', left:'6rem' }}>ARTVISTA GALLERY</h2>
+              <p className="mb-0">Admin Portal</p>
             </Card.Header>
             
             <Card.Body className="px-4 py-4">
               <Form onSubmit={handleSubmitAdmin}>
                 <Form.Group className="mb-3">
+                  <div className="d-flex justify-content-between align-items-center">
                   <Form.Label>Username</Form.Label>
+                  </div>
                   <Form.Control 
                     type="email"
                     value={email}
@@ -125,7 +127,7 @@ function AdLogin() {
                   />
                 </Form.Group>
                 
-                <Form.Group className="mb-4">
+                <Form.Group className="mb-3">
                   <div className="d-flex justify-content-between align-items-center">
                     <Form.Label>Password</Form.Label>
                     <Link to="/Ad-Forgot-Password" className="text-decoration-none small">
@@ -179,7 +181,7 @@ function AdLogin() {
     .admin-login-container {
         background: linear-gradient(135deg, #ffffff 0%, #f0f2f5 100%);
         min-height: 100vh;
-        width: 100vw;
+        width: 98vw;
         display: flex;
         align-items: center;
         justify-content: center;

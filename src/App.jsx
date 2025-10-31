@@ -34,6 +34,7 @@ import OrderSuccess from './Pages/orderSucess.jsx';
 import ViewOrder from './Pages/ViewOrder.jsx';
 import OrderDetails from './Pages/OrderDetails.jsx';
 import Reorder from './Pages/Reorder.jsx';
+import ComplianceDashboard from './Component/ComplianceDashboard.jsx';
 
 export const Currency = "$";
 
@@ -72,6 +73,7 @@ const Loggedin = Boolean(localStorage.getItem("Usertoken"));
                   <Routes>
                     <Route path="add" element={<AddProd />} />
                     <Route path="list" element={<ProductList />} />
+                    <Route path="compliance" element={<ComplianceDashboard />} />
                   </Routes>
                 </AdminLayout>
               }

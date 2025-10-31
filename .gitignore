@@ -45,3 +45,7 @@ jest.config.js
 babel.config.json
 __mocks__/fileMock.js
 src/setupTests.js
+SECURITY_QUICK_START.md
+SECURITY_README.md
+.gitignore
+FRONTEND_SOC_INTEGRATION.md
