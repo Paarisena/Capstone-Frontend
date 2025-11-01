@@ -20,15 +20,19 @@ const ComplianceDashboard = () => {
 
     const fetch = async (url) => {
         try {
-            const { data } = await axios.get(`${API}${url}`);
+            const fullUrl = `${API}${url}`;
+            console.log('📡 Fetching:', fullUrl);
+            const { data } = await axios.get(fullUrl);
+            console.log('✅ Received data from', url, ':', data);
             return data;
         } catch (e) {
-            console.error(e);
+            console.error('❌ Error fetching', url, ':', e.message);
             return null;
         }
     };
 
     const load = async () => {
+        console.log('🔄 Loading compliance dashboard data...');
         setLoading(true);
         const [h, r, a, e] = await Promise.all([
             fetch('/api/health'),
@@ -36,6 +40,7 @@ const ComplianceDashboard = () => {
             fetch(`/api/compliance/analytics?period=${period}`),
             fetch(`/api/compliance/events?limit=50&type=${filter}`)
         ]);
+        console.log('📊 Dashboard data loaded:', { health: h, report: r, analytics: a, events: e });
         setHealth(h);
         setReport(r);
         setAnalytics(a);
@@ -43,14 +48,56 @@ const ComplianceDashboard = () => {
         setLoading(false);
     };
 
+    const generateTestEvent = async () => {
+        try {
+            console.log('🧪 Generating test event...');
+            // Generate a random event type
+            const eventTypes = ['SECURITY', 'FINANCIAL', 'PRIVACY', 'CONFIDENTIAL'];
+            const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+            
+            const { data } = await axios.post(`${API}/api/compliance/test-event`, {
+                eventType: randomType
+            });
+            console.log(`✅ Test ${randomType} event generated:`, data);
+            
+            // Reload both analytics and events immediately
+            const [a, e] = await Promise.all([
+                fetch(`/api/compliance/analytics?period=${period}`),
+                fetch(`/api/compliance/events?limit=50&type=${filter}`)
+            ]);
+            setAnalytics(a);
+            setEvents(e?.events || []);
+        } catch (error) {
+            console.error('❌ Error generating test event:', error);
+        }
+    };
+
+    const syncFinancialLogs = async () => {
+        try {
+            console.log('🔄 Syncing financial audit logs...');
+            const { data } = await axios.post(`${API}/api/compliance/sync-financial-logs`);
+            console.log('✅ Sync result:', data);
+            alert(`Synced ${data.updated} financial logs successfully!`);
+            
+            // Reload data
+            await load();
+        } catch (error) {
+            console.error('❌ Error syncing financial logs:', error);
+            alert('Error syncing financial logs');
+        }
+    };
+
     useEffect(() => { load(); }, [period]);
     useEffect(() => { fetch(`/api/compliance/events?limit=50&type=${filter}`).then(d => setEvents(d?.events || [])); }, [filter]);
     useEffect(() => {
+        load();
+        
+        // Only auto-refresh if enabled
         if (autoRefresh) {
-            const i = setInterval(load, 60000);
-            return () => clearInterval(i);
+            const interval = setInterval(load, 30000); // 30 seconds to avoid rate limiting
+            return () => clearInterval(interval);
         }
-    }, [autoRefresh, period]);
+    }, [autoRefresh, period, filter]);
 
     if (loading) return <div className="compliance-dashboard loading"><div className="loading-spinner"></div><p>Loading...</p></div>;
 
@@ -60,8 +107,14 @@ const ComplianceDashboard = () => {
             <div className="dashboard-header">
                 <h1>🛡️ SOC Compliance Dashboard</h1>
                 <div className="header-controls">
+                    <button className="refresh-btn" onClick={generateTestEvent} title="Generate a test security event">
+                        🧪 Test Event
+                    </button>
+                    <button className="refresh-btn" onClick={syncFinancialLogs} title="Sync financial audit logs with payment statuses">
+                        🔄 Sync Finance
+                    </button>
                     <button className={`refresh-btn ${autoRefresh ? 'active' : ''}`} onClick={() => setAutoRefresh(!autoRefresh)}>
-                        🔄 {autoRefresh ? 'Auto ON' : 'Auto OFF'}
+                        {autoRefresh ? '⏸️ Auto-Refresh ON' : '▶️ Auto-Refresh OFF'}
                     </button>
                     <button className="refresh-btn" onClick={load}>Refresh</button>
                 </div>
@@ -221,11 +274,11 @@ const ComplianceDashboard = () => {
                     ) : (
                         <div className="event-list">
                             {events.map((e, i) => (
-                                <div key={i} className={`event-item ${e.eventCategory.toLowerCase()}`}>
-                                    <div className="event-icon">{e.icon}</div>
+                                <div key={i} className={`event-item ${e.eventCategory?.toLowerCase() || 'unknown'}`}>
+                                    <div className="event-icon">{e.icon || '📋'}</div>
                                     <div className="event-details">
                                         <div className="event-header">
-                                            <span className="event-category">{e.eventCategory}</span>
+                                            <span className="event-category">{e.eventCategory || 'UNKNOWN'}</span>
                                             <span className="event-time">{new Date(e.timestamp).toLocaleString()}</span>
                                         </div>
                                         <div className="event-body">
