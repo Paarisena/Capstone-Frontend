@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './ComplianceDashboard.css';
 
-const API = import.meta.env.VITE_BE_URL || 'http://localhost:8000';
+const API = import.meta.env.VITE_BE_URL;
 
 const ComplianceDashboard = () => {
     const [health, setHealth] = useState(null);
