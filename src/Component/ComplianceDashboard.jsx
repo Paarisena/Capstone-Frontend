@@ -41,6 +41,14 @@ const ComplianceDashboard = () => {
             fetch(`/api/compliance/events?limit=50&type=${filter}`)
         ]);
         console.log('📊 Dashboard data loaded:', { health: h, report: r, analytics: a, events: e });
+        console.log('📊 Full report data:', r);
+        if (r?.details) {
+            r.details.forEach(check => {
+                if (!check.passed) {
+                    console.error('❌ Failed Check:', check.name, check.issues);
+                }
+            });
+        }
         setHealth(h);
         setReport(r);
         setAnalytics(a);
