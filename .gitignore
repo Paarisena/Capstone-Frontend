@@ -49,3 +49,4 @@ SECURITY_QUICK_START.md
 SECURITY_README.md
 .gitignore
 FRONTEND_SOC_INTEGRATION.md
+security-test-frontend.ps1
