@@ -12,9 +12,10 @@ export const Signin = () => {
 function Login() {
     const [Email, SetEmail] = useState("");
     const [password, SetPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [needsVerification, setNeedsVerification] = useState(false);
-    
+
     const [Isloggedin, setIsloggedin] = useState(Boolean(localStorage.getItem('userID')));
     const navigate = useNavigate();
 
@@ -31,7 +32,7 @@ function Login() {
         setIsLoading(true);
         
         try {
-            const data = await userLogin({email: Email, password: password});
+            const data = await userLogin({ email: Email, password: password, rememberMe });
 
             if (data.requiresVerification) {
                 setNeedsVerification(true);
@@ -112,8 +113,18 @@ function Login() {
                                             </Link>
                                         </div>
                                     </div>
-                                    <Button 
-                                        type="submit" 
+                                    <div className="remember-me-container">
+                                        <Form.Check
+                                            type="checkbox"
+                                            id="rememberMe"
+                                            label="Keep me logged in"
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
+                                            className="remember-me-check"
+                                        />
+                                    </div>
+                                    <Button
+                                        type="submit"
                                         className="glass-button mb-3"
                                         disabled={isLoading}
                                     >
@@ -228,6 +239,25 @@ function Login() {
                 .forgot-password-link:hover {
                     color: #0056b3;
                     text-decoration: underline;
+                }
+
+                .remember-me-container {
+                    margin-bottom: 1rem;
+                }
+
+                .remember-me-check {
+                    font-size: 0.9rem;
+                    color: #555;
+                    cursor: pointer;
+                }
+
+                .remember-me-check .form-check-input {
+                    cursor: pointer;
+                }
+
+                .remember-me-check .form-check-input:checked {
+                    background-color: #007bff;
+                    border-color: #007bff;
                 }
 
                 @media (max-width: 576px) {

@@ -56,9 +56,6 @@ const userLogin = async(data)=>{
     })
      const responseData = await response.json();
 
-        // Log response for debugging
-        console.log('Login response:', responseData);
-
         if (!response.ok) {
             if (responseData.requiresVerification) {
                 return {
@@ -90,9 +87,6 @@ const AdminLogin = async(data) => {
         });
 
         const responseData = await response.json();
-
-        // Log response for debugging
-        console.log('Login response:', responseData);
 
         if (!response.ok) {
             if (responseData.requiresVerification) {
