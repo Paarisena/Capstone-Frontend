@@ -1,25 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, Dropdown, Badge } from "react-bootstrap";
+import { toast } from "react-toastify";
 import "./Navbar.css";
 
 const NavigationBar = () => {
   const [expanded, setExpanded] = useState(false);
   const cartCount = Number(localStorage.getItem("cartCount")) || 0;
   const navigate = useNavigate();
-  const Username = localStorage.getItem("Username");
-  const Loggedin = Boolean(localStorage.getItem("Usertoken"));
+
+  const getAuthState = () => ({
+    username: localStorage.getItem("Username"),
+    loggedIn: Boolean(localStorage.getItem("userID")),
+  });
+
+  const [authState, setAuthState] = useState(getAuthState);
+  const Username = authState.username;
+  const Loggedin = authState.loggedIn;
+
+  useEffect(() => {
+    const sync = () => setAuthState(getAuthState());
+    // "auth-change" fires in same tab; "storage" fires from other tabs
+    window.addEventListener("auth-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("auth-change", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   const handleNavLinkClick = () => {
     setExpanded(false);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (Loggedin) {
-      localStorage.removeItem("Usertoken");
-      window.location.href = "/";
+      await fetch(import.meta.env.VITE_BE_URL + "/api/logout", { method: "POST", credentials: "include" });
+      ["userID", "Useremail", "Username", "userRole"].forEach(k => localStorage.removeItem(k));
+      setAuthState({ username: null, loggedIn: false });
+      toast.success("Logged out successfully");
+      navigate("/");
     } else {
-      window.location.href = "/login";
+      navigate("/login");
     }
   };
 

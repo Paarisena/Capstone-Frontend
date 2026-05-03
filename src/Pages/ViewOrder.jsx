@@ -13,14 +13,13 @@ const ViewOrder = () => {
         const fetchOrders = async () => {
             try {
                 const userId = localStorage.getItem('userID');
-                const token = localStorage.getItem('Usertoken');
-                
-                if (!userId || !token) {
+
+                if (!userId) {
                     navigate('/login');
                     return;
                 }
 
-                const result = await getUserPayments(userId, token);
+                const result = await getUserPayments(userId);
                 setOrders(result.success ? result.payments || [] : []);
                 if (!result.success) setError('Failed to load orders');
             } catch (err) {

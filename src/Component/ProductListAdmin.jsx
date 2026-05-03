@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchProducts, deleteProduct, editProduct } from "../Constant";
 import { Card, Row, Col, Table, Button, Form, Badge, Spinner, InputGroup } from "react-bootstrap";
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import { PencilFill, TrashFill, XCircleFill, CheckCircleFill, Search } from 'react-bootstrap-icons';
 import { Currency } from "../App";
 
@@ -42,8 +42,7 @@ const ProductList = () => {
     const fetchAllProducts = async () => {
         try {
             setLoading(true);
-            const Admintoken = localStorage.getItem('admintoken');
-            const response = await fetchProducts(Admintoken);
+            const response = await fetchProducts();
             
             if (response.success) {
                 setProducts(response.products || []);
@@ -265,8 +264,6 @@ const ProductList = () => {
                     </div>
                 </Card.Body>
             </Card>
-            <ToastContainer position="bottom-right" />
-            
             <style jsx>{`
                 .product-admin-wrapper {
                     background-color: #fcfcfcff;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Form, Container, Row, Col, Card, Button, Alert, InputGroup } from "react-bootstrap";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import { resetPassword } from "../Constant";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -97,8 +97,6 @@ const ResetPassword = () => {
 
   return (
     <Container fluid className="reset-password-container py-5">
-      <ToastContainer position="top-right" autoClose={3000} />
-
       <Row className="justify-content-center">
         <Col xs={12} sm={10} md={8} lg={6} xl={4}>
           <Card className="shadow-lg border-0">

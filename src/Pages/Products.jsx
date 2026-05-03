@@ -5,6 +5,7 @@ import { Form, Card, Button, Carousel, Container, Row, Col, Spinner, Alert } fro
 import { reviewProduct, fetchReviews, deleteReview, addProductToCart, createDirectPurchase } from "../Constant";
 import { StarFill, Star, CartPlus, CreditCard } from 'react-bootstrap-icons';
 import { Currency } from "../App";
+import { toast } from "react-toastify";
 
 const InnerView = () => {
     const { id } = useParams();
@@ -13,12 +14,12 @@ const InnerView = () => {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [actionStatus, setActionStatus] = useState({ message: '', type: '' });
+    const [actionStatus, setActionStatus] = useState({ message: '', type: '' }); // kept for inline Alert fallback
     const [activeImage, setActiveImage] = useState(0);
 
     const Username = localStorage.getItem("Username") || "";
     const [review, setReview] = useState({ name: Username, rating: 5, comment: "" });
-    const isLoggedIn = localStorage.getItem("Usertoken") ? true : false;
+    const isLoggedIn = Boolean(localStorage.getItem("userID"));
 
     const handleReviewChange = (e) => {
         const { name, value } = e.target;
@@ -30,68 +31,49 @@ const InnerView = () => {
 
     const handleAddToCart = async () => {
         const userId = localStorage.getItem("userID");
-        const token = localStorage.getItem("Usertoken");
-        
+
         if (!isLoggedIn) {
-            setActionStatus({
-                message: "Please log in to add items to the cart",
-                type: "danger"
-            });
+            toast.warning("Please log in to add items to the cart");
             return;
         }
-        
+
         try {
-            setActionStatus({ message: "Adding to cart...", type: "info" });
-            const response = await addProductToCart(userId, id, token);
-            
+            const toastId = toast.loading("Adding to cart...");
+            const response = await addProductToCart(userId, id);
+
             if (response.success) {
-                setActionStatus({
-                    message: "Product added to cart successfully!",
-                    type: "success"
+                toast.update(toastId, {
+                    render: "Added to cart successfully!",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 3000
                 });
-                
-                // Clear status message after 3 seconds
-                setTimeout(() => {
-                    setActionStatus({ message: '', type: '' });
-                }, 3000);
             } else {
-                setActionStatus({
-                    message: response.message || "Failed to add to cart",
-                    type: "danger"
+                toast.update(toastId, {
+                    render: response.message || "Failed to add to cart",
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 3000
                 });
             }
         } catch (error) {
             console.error("Error adding product to cart:", error);
-            setActionStatus({
-                message: "Something went wrong. Please try again",
-                type: "danger"
-            });
+            toast.error("Something went wrong. Please try again.");
         }
     };
 
     const handleBuyNow = async () => {
         const userId = localStorage.getItem("userID");
-        const token = localStorage.getItem("Usertoken");
 
-        console.log("🔍 Debug handleBuyNow:");
-        console.log("userId from localStorage:", userId);
-        console.log("token from localStorage:", token ? "Present" : "Missing");
-        console.log("isLoggedIn:", isLoggedIn);
-        
         if (!isLoggedIn) {
-            setActionStatus({
-                message: "Please log in to proceed with purchase",
-                type: "danger"
-            });
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
+            toast.warning("Please log in to proceed with purchase");
+            setTimeout(() => navigate('/login'), 2000);
             return;
         }
-        
+
         try {
-            setActionStatus({ message: "Redirecting to payment...", type: "info" });
-            
+            toast.info("Redirecting to payment...", { autoClose: 1500 });
+
             // Create cart-like item structure for the payment page
             const buyNowItem = {
                 _id: id,
@@ -122,10 +104,7 @@ const InnerView = () => {
             
         } catch (error) {
             console.error("Error in buy now:", error);
-            setActionStatus({
-                message: "Something went wrong. Please try again",
-                type: "danger"
-            });
+            toast.error("Something went wrong. Please try again.");
         }
     };
 
@@ -134,35 +113,30 @@ const InnerView = () => {
         if (!isLoggedIn) return;
 
         try {
-            setActionStatus({ message: "Submitting review...", type: "info" });
+            const toastId = toast.loading("Submitting review...");
             const data = await reviewProduct(id, { ...review, name: Username });
-            
+
             if (data.success) {
                 setReview({ name: Username, rating: 5, comment: "" });
                 const refreshed = await fetchReviews(id);
                 if (refreshed.success) setReviews(refreshed.reviews);
-                
-                setActionStatus({
-                    message: "Review submitted successfully!",
-                    type: "success"
+                toast.update(toastId, {
+                    render: "Review submitted successfully!",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 3000
                 });
-                
-                // Clear status after 3 seconds
-                setTimeout(() => {
-                    setActionStatus({ message: '', type: '' });
-                }, 3000);
             } else {
-                setActionStatus({
-                    message: "Failed to submit review",
-                    type: "danger"
+                toast.update(toastId, {
+                    render: "Failed to submit review",
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 3000
                 });
             }
         } catch (error) {
             console.error("Error submitting review:", error);
-            setActionStatus({
-                message: "Error submitting review",
-                type: "danger"
-            });
+            toast.error("Error submitting review. Please try again.");
         }
     };
 
@@ -170,34 +144,29 @@ const InnerView = () => {
         if (!isLoggedIn) return;
 
         try {
-            setActionStatus({ message: "Deleting review...", type: "info" });
+            const toastId = toast.loading("Deleting review...");
             const response = await deleteReview(id, Username);
-            
+
             if (response && response.success) {
                 const refreshed = await fetchReviews(id);
                 if (refreshed.success) setReviews(refreshed.reviews);
-                
-                setActionStatus({
-                    message: "Review deleted successfully!",
-                    type: "success"
+                toast.update(toastId, {
+                    render: "Review deleted successfully!",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 3000
                 });
-                
-                // Clear status after 3 seconds
-                setTimeout(() => {
-                    setActionStatus({ message: '', type: '' });
-                }, 3000);
             } else {
-                setActionStatus({
-                    message: "Failed to delete review",
-                    type: "danger"
+                toast.update(toastId, {
+                    render: "Failed to delete review",
+                    type: "error",
+                    isLoading: false,
+                    autoClose: 3000
                 });
             }
         } catch (error) {
             console.error("Error deleting review:", error);
-            setActionStatus({
-                message: "Error deleting review",
-                type: "danger"
-            });
+            toast.error("Error deleting review. Please try again.");
         }
     };
     
@@ -333,19 +302,6 @@ const InnerView = () => {
                     }
                 }
             `}</style>
-            
-            {actionStatus.message && (
-                <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1050, maxWidth: "300px" }}>
-                    <Alert 
-                        variant={actionStatus.type} 
-                        className="shadow-sm py-2 px-3"
-                        dismissible
-                        onClose={() => setActionStatus({ message: '', type: '' })}
-                    >
-                        {actionStatus.message}
-                    </Alert>
-                </div>
-            )}
             
             <Container className="py-4 product-container" style={{ position: 'relative', top: '7rem' }}>
                 <Row className="mb-4">

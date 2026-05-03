@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements, } from '@stripe/react-stripe-js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePaymentStatusListener } from '../Constant.js';
+import { toast } from 'react-toastify';
 
 import './Payment.css';
 import { useEffect } from 'react';
@@ -16,30 +17,22 @@ const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess
     const stripe = useStripe();
     const elements = useElements();
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState('');
     const [currentOrderId, setCurrentOrderId] = useState(null);
     const [paymentStatus, setPaymentStatus] = useState('pending');
     const navigate = useNavigate();
 
-    // ✅ Listen for real-time webhook updates
     usePaymentStatusListener(currentOrderId, (status, payment) => {
-        console.log('🎉 Payment status updated from webhook:', status);
         setPaymentStatus(status);
-        
+
         if (status === 'succeeded') {
-            setMessage('Payment successful! Redirecting...');
-            setMessageType('success');
+            toast.success('Payment successful! Redirecting...');
             setLoading(false);
-            
-            // Clear cart and redirect
             localStorage.removeItem('cartItems');
             setTimeout(() => {
                 navigate(`/payment-success/${payment.orderId}`);
             }, 2000);
         } else if (status === 'failed') {
-            setMessage('Payment failed. Please try again.');
-            setMessageType('error');
+            toast.error('Payment failed. Please try again.');
             setLoading(false);
         }
     });
@@ -47,32 +40,26 @@ const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
-        setMessage('');
 
         if (!stripe || !elements) {
-            setMessage('Payment system not loaded. Please refresh the page.');
-            setMessageType('error');
+            toast.error('Payment system not loaded. Please refresh the page.');
             setLoading(false);
             return;
         }
 
+        const toastId = toast.loading('Creating payment...');
+
         try {
-            // Step 1: Create payment intent
-            setMessage('Creating payment...');
             const paymentResult = await processPayment(cartItems, totalAmount, shippingAddress);
-            
+
             if (!paymentResult.success) {
                 throw new Error(paymentResult.message);
             }
 
-            // Step 2: Start listening for webhook updates
             setCurrentOrderId(paymentResult.orderId);
-            console.log('🎯 Started listening for order:', paymentResult.orderId);
-
-            // Step 3: Confirm payment with Stripe
-            setMessage('Processing payment...');
+            toast.update(toastId, { render: 'Processing payment...', isLoading: true });
             setPaymentStatus('processing');
-            
+
             const { error, paymentIntent } = await stripe.confirmCardPayment(
                 paymentResult.clientSecret,
                 {
@@ -90,27 +77,34 @@ const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess
                 throw new Error(error.message);
             }
 
-            // Step 4: Wait for webhook to confirm
             if (paymentIntent.status === 'succeeded') {
-                // Sometimes immediate success
-                setMessage('Payment successful! Redirecting...');
-                setMessageType('success');
+                toast.update(toastId, {
+                    render: 'Payment successful! Redirecting...',
+                    type: 'success',
+                    isLoading: false,
+                    autoClose: 2000
+                });
                 setPaymentStatus('succeeded');
                 localStorage.removeItem('cartItems');
                 setTimeout(() => {
                     navigate(`/payment-success/${paymentResult.orderId}`);
                 }, 2000);
             } else {
-                // Wait for webhook confirmation
-                setMessage('Confirming payment... Please wait');
+                toast.update(toastId, {
+                    render: 'Confirming payment... Please wait',
+                    isLoading: true
+                });
                 setPaymentStatus('confirming');
-                // The webhook listener will handle the success
             }
-            
+
         } catch (error) {
             console.error('Payment error:', error);
-            setMessage(`Payment failed: ${error.message}`);
-            setMessageType('error');
+            toast.update(toastId, {
+                render: `Payment failed: ${error.message}`,
+                type: 'error',
+                isLoading: false,
+                autoClose: 5000
+            });
             setLoading(false);
             setPaymentStatus('failed');
         }
@@ -162,11 +156,6 @@ const PaymentForm = ({ cartItems, totalAmount, shippingAddress, onPaymentSuccess
                 )}
             </button>
             
-            {message && (
-                <div className={`alert alert-${messageType === 'error' ? 'danger' : 'success'}`}>
-                    {message}
-                </div>
-            )}
         </form>
     );
 };
@@ -190,8 +179,7 @@ const Payment = () => {
         const fetchProfileAddress = async () => {
             if (!shippingAddress.street) { // Only fetch if no address in localStorage
                 try {
-                    const token = localStorage.getItem("Usertoken");
-                    const response = await fetchUserProfile(token);
+                    const response = await fetchUserProfile();
                     
                     if (response.success && response.profile.address) {
                         const profileAddress = response.profile.address;
@@ -230,14 +218,13 @@ const Payment = () => {
         
         (async () => {
             const userId = localStorage.getItem('userID');
-            const token = localStorage.getItem('UserToken');
-            
-            if (!userId || !token) return window.location.href = '/login';
-            
+
+            if (!userId) return window.location.href = '/login';
+
             setLoading(true);
-            
+
             try {
-                const { success, cart } = await getUserCart(userId, token);
+                const { success, cart } = await getUserCart(userId);
                 
                 if (success && cart) {
                     const items = Object.entries(cart).map(([id, item]) => ({

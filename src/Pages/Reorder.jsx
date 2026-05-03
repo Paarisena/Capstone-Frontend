@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPayment, reorderProduct } from '../Constant.js';
+import { toast } from 'react-toastify';
 
 const Reorder = () => {
     const { orderId } = useParams();
@@ -24,15 +25,16 @@ const Reorder = () => {
 
         try {
             const result = await getPayment(orderId);
-            console.log('Order Result:', result);
             if (result.success) {
                 setOrderDetails(result.payment);
             } else {
                 setError('Order not found');
+                toast.error('Order not found');
             }
         } catch (err) {
             console.error('Fetch error:', err);
             setError('Failed to load order details');
+            toast.error('Failed to load order details');
         } finally {
             setLoading(false);
         }
@@ -40,44 +42,48 @@ const Reorder = () => {
 
     const handleReorder = async () => {
         if (!orderDetails || !orderDetails.items || orderDetails.items.length === 0) {
-            alert('No items to reorder');
+            toast.warning('No items to reorder');
             return;
         }
-        
-        const token = localStorage.getItem('Usertoken');
+
         const userId = localStorage.getItem('userID');
-        
-        if (!token) {
-            alert('⚠️ Please login to add items to cart');
+        if (!userId) {
+            toast.warning('Please login to add items to cart');
             return;
         }
-        
+
         setReordering(true);
-        
+        const toastId = toast.loading('Processing reorder...');
+
         try {
-            // Call the reorderProduct function with orderId
             const result = await reorderProduct(orderId);
-            
-            console.log('Reorder result:', result);
-            
+
             if (result.success) {
-                alert(`✅ Successfully added ${orderDetails.items.length} item(s) to cart!`);
-                
-                // Wait a bit for backend to process, then navigate
+                toast.update(toastId, {
+                    render: `${orderDetails.items.length} item(s) reordered successfully!`,
+                    type: 'success',
+                    isLoading: false,
+                    autoClose: 2000
+                });
                 setTimeout(() => {
-                    if (userId) {
-                        window.location.href = `/cart/${userId}`;
-                    } else {
-                        window.location.href = '/cart';
-                    }
-                }, 300);
+                    window.location.href = `/cart/${userId}`;
+                }, 2000);
             } else {
-                alert(`❌ ${result.message || 'Failed to add items to cart'}`);
+                toast.update(toastId, {
+                    render: result.message || 'Failed to reorder items',
+                    type: 'error',
+                    isLoading: false,
+                    autoClose: 4000
+                });
             }
-            
         } catch (err) {
             console.error('Reorder error:', err);
-            alert('❌ An error occurred. Please try again.');
+            toast.update(toastId, {
+                render: 'An error occurred. Please try again.',
+                type: 'error',
+                isLoading: false,
+                autoClose: 4000
+            });
         } finally {
             setReordering(false);
         }

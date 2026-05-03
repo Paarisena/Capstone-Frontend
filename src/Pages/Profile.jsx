@@ -2,6 +2,7 @@ import { AddProfile, fetchUserProfile } from "../Constant";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Form, Button, Container, Row, Col, Card } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 const Profile = () => {
     const [profileData, setProfileData] = useState({
@@ -43,13 +44,21 @@ const Profile = () => {
 
     const fetchProfileData = async () => {
         try {
-            const Usertoken = localStorage.getItem("Usertoken");
-            const response = await fetchUserProfile(Usertoken);
+            const response = await fetchUserProfile();
             if (response.success) {
-                setProfileData(response.profile);
+                setProfileData({
+                    name: response.profile.name || "",
+                    email: response.profile.email || "",
+                    DOB: response.profile.DOB || "",
+                    phone: response.profile.phone || "",
+                    address: {
+                        street: response.profile.address?.street || "",
+                        city: response.profile.address?.city || "",
+                        state: response.profile.address?.state || "",
+                        zip: response.profile.address?.zip || ""
+                    }
+                });
                 setSelectedState(response.profile.address?.state || "");
-            } else {
-                console.log("Error fetching profile data:", response.message);
             }
         } catch (error) {
             console.error("Error fetching profile data:", error);
@@ -61,19 +70,30 @@ const Profile = () => {
     }, []);
 
     const handleProfileUpdate = async () => {
+        const toastId = toast.loading("Updating profile...");
         try {
-            const response = await AddProfile(profileData, localStorage.getItem("Usertoken"));
-            console.log("Profile updated successfully:", response);
+            const response = await AddProfile(profileData);
 
             if (profileData.address?.street) {
-            localStorage.setItem("Address", profileData.address.street);
-            localStorage.setItem("City", profileData.address.city);
-            localStorage.setItem("State", profileData.address.state);
-            localStorage.setItem("PostalCode", profileData.address.zip);
-        }
-            navigate("/profile");
+                localStorage.setItem("Address", profileData.address.street);
+                localStorage.setItem("City", profileData.address.city);
+                localStorage.setItem("State", profileData.address.state);
+                localStorage.setItem("PostalCode", profileData.address.zip);
+            }
+            toast.update(toastId, {
+                render: "Profile updated successfully!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000
+            });
         } catch (error) {
             console.error("Error updating profile:", error);
+            toast.update(toastId, {
+                render: error.message || "Failed to update profile",
+                type: "error",
+                isLoading: false,
+                autoClose: 4000
+            });
         }
     };
 

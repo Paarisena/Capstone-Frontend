@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Form, Button, Container, Row, Col, Card, } from "react-bootstrap";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { AdminRegister } from "../Constant.js";
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import Verification from './Verification';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -17,7 +17,7 @@ const AdminRegistration = () => {
     const [formState, setFormState] = useState(initialState);
     const [loading, setLoading] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(false);
-    const Isloggedin = Boolean(localStorage.getItem('admintoken'));
+    const Isloggedin = Boolean(localStorage.getItem('userID') && localStorage.getItem('userRole') === 'admin');
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -85,19 +85,6 @@ const AdminRegistration = () => {
 
     return (
         <>
-            <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-            />
-            
             <div fluid className="admin-registration-container min-vh-100 d-flex align-items-center justify-content-center py-5">
                 <Row className="justify-content-center w-100">
                     <Col xs={12} sm={10} md={7} lg={5} xl={4}>

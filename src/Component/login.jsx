@@ -3,8 +3,7 @@ import {Link,Navigate,useNavigate} from "react-router-dom"
 import { userLogin } from "../Constant";
 
 import { Button, Form, Row, Col, Card } from "react-bootstrap";
-import { toast, ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from "react-toastify";
 
 export const Signin = () => {
   <Link to="/Login">SignIn</Link>
@@ -16,7 +15,7 @@ function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [needsVerification, setNeedsVerification] = useState(false);
     
-    const Isloggedin = Boolean(localStorage.getItem('Usertoken'));
+    const [Isloggedin, setIsloggedin] = useState(Boolean(localStorage.getItem('userID')));
     const navigate = useNavigate();
 
     const handleEmailChange = (e) => {
@@ -53,22 +52,14 @@ function Login() {
                 return;
             }
 
-            if (data.token) {
-                const payload = JSON.parse(atob(data.token.split('.')[1]));
-                
-                if (payload.exp && payload.exp * 1000 < Date.now()) {
-                    localStorage.removeItem('Usertoken');
-                    toast.error('Session expired, please login again');
-                    return;
-                }
-                console.log("Login Payload:", payload);
+            if (data.success) {
+                localStorage.setItem('userID', data.userId);
+                localStorage.setItem('Useremail', data.email);
+                localStorage.setItem('Username', data.name);
+                localStorage.setItem('userRole', 'user');
 
-                localStorage.setItem('Usertoken', data.token);
-                localStorage.setItem('Useremail', payload.email);
-                localStorage.setItem('userID', payload.id);
-                localStorage.setItem('Username', payload.name);
-                
-                
+                window.dispatchEvent(new Event('auth-change'));
+                setIsloggedin(true);
                 toast.success('Login successful');
                 navigate("/");
             } else {
@@ -82,25 +73,12 @@ function Login() {
         }
     };
 
-    if (Isloggedin) {
+    if (Isloggedin && localStorage.getItem('userRole') === 'user') {
         return <Navigate to="/profile"/>;
     }
 
     return (
         <>
-            <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-            />
-            
             <div fluid className="login-container min-vh-100 d-flex align-items-center justify-content-center py-5">
                 <Row className="justify-content-center w-100">
                     <Col xs={12} sm={10} md={7} lg={5} xl={4}>

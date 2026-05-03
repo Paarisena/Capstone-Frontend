@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, Container, Row, Col, Button, InputGroup, FormControl, Table } from "react-bootstrap";
 import { addProductToCart, updateCart, getUserCart, deleteFromCart } from "../Constant";
 import { Currency } from "../App";
+import { toast } from "react-toastify";
 
 const Cart = () => {
     const [cartItems, setCartItems] = useState({});
@@ -16,15 +17,14 @@ const Cart = () => {
         const fetchCartItems = async () => {
             setLoading(true);
             try {
-                const userId = localStorage.getItem('userID'); 
-                const Usertoken = localStorage.getItem('Usertoken');
-                
-                if (!userId || !Usertoken) {
+                const userId = localStorage.getItem('userID');
+
+                if (!userId) {
                     navigate('/login');
                     return;
                 }
-                
-                const response = await getUserCart(userId, Usertoken);
+
+                const response = await getUserCart(userId);
                 if (response.success) {
                     setCartItems(response.cart);
                     // Set initial quantities for input fields
@@ -34,10 +34,10 @@ const Cart = () => {
                     });
                     setQuantities(initialQuantities);
                 } else {
-                    console.log("Error fetching cart items:", response.message);
+                    toast.error(response.message || "Failed to load cart");
                 }
             } catch (error) {
-                console.log("Error fetching cart items:", error);
+                toast.error("Failed to load cart. Please try again.");
             } finally {
                 setLoading(false);
             }
@@ -48,23 +48,20 @@ const Cart = () => {
     const handleRemoveFromCart = async (itemId) => {
         try {
             const userId = localStorage.getItem('userID');
-            const Usertoken = localStorage.getItem('Usertoken');
-            
-            // Set updating state for this item
             setUpdating(prev => ({ ...prev, [itemId]: true }));
-            
-            const response = await deleteFromCart(userId, itemId, Usertoken);
+            const response = await deleteFromCart(userId, itemId);
             if (response.success) {
                 setCartItems((prevItems) => {
                     const newItems = { ...prevItems };
                     delete newItems[itemId];
                     return newItems;
                 });
+                toast.success("Item removed from cart");
             } else {
-                console.log("Error removing item from cart:", response.message);
+                toast.error(response.message || "Failed to remove item");
             }
         } catch (error) {
-            console.log("Error removing item from cart:", error);
+            toast.error("Failed to remove item. Please try again.");
         } finally {
             setUpdating(prev => ({ ...prev, [itemId]: false }));
         }
@@ -87,8 +84,7 @@ const Cart = () => {
         
         try {
             const userId = localStorage.getItem('userID');
-            const Usertoken = localStorage.getItem('Usertoken');
-            const response = await updateCart(userId, itemId, quantity, Usertoken);
+            const response = await updateCart(itemId, quantity);
             
             if (response.success) {
                 setCartItems((prevItems) => ({
@@ -98,11 +94,12 @@ const Cart = () => {
                         quantity
                     }
                 }));
+                toast.success("Cart updated");
             } else {
-                console.log("Error updating cart:", response.message);
+                toast.error(response.message || "Failed to update cart");
             }
         } catch (error) {
-            console.log("Error updating cart:", error);
+            toast.error("Failed to update cart. Please try again.");
         } finally {
             setUpdating(prev => ({ ...prev, [itemId]: false }));
         }
@@ -113,8 +110,13 @@ const Cart = () => {
     };
 
     const handleCheckout = () => {
-        navigate('/payment', { 
-            state: { 
+        if (Object.keys(cartItems).length === 0) {
+            toast.warning("Your cart is empty");
+            return;
+        }
+        toast.info("Redirecting to checkout...", { autoClose: 1500 });
+        navigate('/payment', {
+            state: {
                 cartItems: Object.entries(cartItems).map(([id, item]) => ({
                     _id: id,
                 productId: id,
@@ -128,7 +130,7 @@ const Cart = () => {
             get totalAmount() {
                 return this.cartItems.reduce((sum, item) => sum + (item.Price * item.quantity), 0);
             }
-        } 
+        }
     });
 };
     // Calculate total

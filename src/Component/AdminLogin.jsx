@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { AdminLogin, verification } from "../Constant";
 import { Form, Container, Row, Col, Card, Button } from "react-bootstrap";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 function AdLogin() {
   const [email, setEmail] = useState("");
@@ -12,7 +11,7 @@ function AdLogin() {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
    const [needsVerification, setNeedsVerification] = useState(false);
 
-  const isLoggedIn = localStorage.getItem('admintoken');
+  const isLoggedIn = localStorage.getItem('userID') && localStorage.getItem('userRole') === 'admin';
   const navigate = useNavigate();
 
   const handleEmailChange = (e) => {
@@ -59,23 +58,18 @@ function AdLogin() {
         }, 1000);
         
         return;
-      } else if (data.exp && data.exp * 1000 < Date.now()) {
-        localStorage.removeItem('admintoken');
-        console.log('Showing session expired toast...'); // Debug log
-        toast.error('Session expired, please login again', {
-          position: "top-right",
-          theme: "colored"
-        });
-      } else if (data.token) {
-        localStorage.setItem('admintoken', data.token);
-        console.log('Showing success toast...'); // Debug log
+      } else if (data.success) {
+        localStorage.setItem('userID', data.userId);
+        localStorage.setItem('Useremail', data.email);
+        localStorage.setItem('Username', data.name);
+        localStorage.setItem('userRole', 'admin');
+        window.dispatchEvent(new Event('auth-change'));
         toast.success('Login successful', {
           position: "top-right",
           theme: "colored"
         });
         navigate('/admin/add');
       } else {
-        console.log('Showing invalid credentials toast...'); // Debug log
         toast.error('Invalid credentials', {
           position: "top-right",
           theme: "colored"

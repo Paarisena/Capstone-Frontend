@@ -6,10 +6,9 @@ import axios from 'axios';
 const beUrl = import.meta.env.VITE_BE_URL;
 
  
-const gettoken = () =>{
-    return localStorage.getItem('token')
-}
-const token  = gettoken()
+// Token is stored in HttpOnly cookie — browser sends it automatically with credentials: 'include'
+// Only non-sensitive user identity is kept in localStorage for UI purposes
+const gettoken = () => null // kept for compatibility; actual auth uses cookie
 const userRegister = async(data) =>{
     try{
     const response = await fetch(`${beUrl}/api/register`,{
@@ -49,10 +48,11 @@ const userLogin = async(data)=>{
         const response = await fetch(`${beUrl}/api/login`,{
         body:JSON.stringify(data),
         method:'POST',
+        credentials: 'include',
         headers:{
             'Content-Type':'application/json',
         },
-        
+
     })
      const responseData = await response.json();
 
@@ -82,6 +82,7 @@ const AdminLogin = async(data) => {
     try {
         const response = await fetch(`${beUrl}/api/AdminLogin`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -164,33 +165,15 @@ return responseData;
 const fetchProducts = async () => {
     try {
         const userId = localStorage.getItem('userID');
-        const Admintoken = localStorage.getItem('admintoken');
-        
-        if (!Admintoken) {
-            throw new Error('Admin authentication required');
-        }
 
         const response = await fetch(`${beUrl}/api/products?adminId=${userId}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${Admintoken}`,
-                'Content-Type': 'application/json'
-            }
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
         });
 
-        // Log raw response for debugging
-        const text = await response.text();
-        console.log('Raw API Response:', text);
-
-        try {
-            // Attempt to parse the response
-            const data = JSON.parse(text);
-            return data;
-        } catch (parseError) {
-            console.error('Response parsing error:', parseError);
-            console.error('Raw response:', text);
-            throw new Error('Invalid JSON response from server');
-        }
+        const data = await response.json();
+        return data;
     } catch (error) {
         console.error('Fetch Products Error:', error);
         throw error;
@@ -226,13 +209,10 @@ const fetchProductsPublic = async () => {
     }
 }
     const editProduct = async(id, updatedData) => {
-        const Admintoken = localStorage.getItem('admintoken');
         const response = await fetch(`${beUrl}/api/edit/${id}`, {
             method: 'PUT',
-            headers: {  
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${Admintoken}`,
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedData),
         });
         const responseData = await response.json();
@@ -243,19 +223,15 @@ const fetchProductsPublic = async () => {
         return responseData;
     }
     const addProduct = async(Data) => {
-    const admintoken = localStorage.getItem('admintoken');
-    if (!admintoken) throw new Error('Admin authentication required. Please log in as admin.');
-
     const response = await fetch(`${beUrl}/api/addProducts`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${admintoken}` },
+        credentials: 'include',
         body: Data
     });
 
     const responseData = await response.json();
     if (!response.ok) {
         if (response.status === 401) {
-            localStorage.removeItem('admintoken');
             localStorage.removeItem('userID');
             throw new Error('Admin session expired. Please log in again.');
         }
@@ -265,78 +241,55 @@ const fetchProductsPublic = async () => {
 }
 
 const deleteProduct = async(id)=>{
-    const tokens = localStorage.getItem('admintoken');
-    if (!tokens) {
-        throw new Error('Token not found in localStorage');
-    }
     const response = await fetch(`${beUrl}/api/delete/${id}`,{
         method:'DELETE',
-        headers:{
-            Authorization: `Bearer ${tokens}`,
-
-        }
-    })
+        credentials: 'include',
+    });
     const responseData = await response.json();
-    console.log("Delete API Response:", responseData);
     if (!response.ok) {
-        console.log('Error:', responseData);
         throw new Error(`Error ${response.status}: ${responseData.message}`);
     }
-    
     return responseData;
 }
 
 const singleProduct = async(id)=>{
-    if (!token) {
-        throw new Error('Token not found in localStorage');
-    }
     const response = await fetch(`${beUrl}/api/singleProduct/${id}`,{
         method:'GET',
-        headers:{
-            Authorization: `Bearer ${token}`,
-
-        }
-    })
+        credentials: 'include',
+    });
     const responseData = await response.json();
-    console.log("Delete API Response:", responseData);
     if (!response.ok) {
-        console.log('Error:', responseData);
         throw new Error(`Error ${response.status}: ${responseData.message}`);
     }
-    
     return responseData;
 }
 
 const autoLogout = () => {
     const navigate = useNavigate();
     const logoutTimer = useRef(null);
+    const userId = localStorage.getItem('userID');
     useEffect(() => {
-        if (token) {
-            const resetLogoutTimer=()=>{
-            logoutTimer.current = setTimeout(() => {
-                localStorage.removeItem("Usertoken");
-                navigate("/login");
-                localStorage.removeItem("admintoken");
-                navigate("/AdLogin");
-            }, 15 * 60 * 1000);
+        if (userId) {
+            const resetLogoutTimer = () => {
+                clearTimeout(logoutTimer.current);
+                logoutTimer.current = setTimeout(async () => {
+                    await fetch(`${beUrl}/api/logout`, { method: 'POST', credentials: 'include' });
+                    ['userID', 'Useremail', 'Username', 'userRole'].forEach(k => localStorage.removeItem(k));
+                    window.dispatchEvent(new Event('auth-change'));
+                    navigate('/login');
+                }, 15 * 60 * 1000);
+            };
+
+            const events = ['click', 'touchstart', 'mousemove', 'scroll'];
+            events.forEach(event => window.addEventListener(event, resetLogoutTimer));
+            resetLogoutTimer();
+
+            return () => {
+                clearTimeout(logoutTimer.current);
+                events.forEach(event => window.removeEventListener(event, resetLogoutTimer));
+            };
         }
-    
-
-        const events = ['click', 'touchstart',  'mousemove', 'scroll'];
-        events.forEach(event => 
-            window.addEventListener(event, resetLogoutTimer)
-        );
-        resetLogoutTimer();
-
-        return() =>{
-            clearTimeout(logoutTimer.current);
-            events.forEach(event => 
-                window.removeEventListener(event, resetLogoutTimer)
-            );
-        }
-    }
-    }, [token, navigate]);
-
+    }, [userId, navigate]);
 }
 
 const reviewProduct = async (id, data) => {
@@ -360,9 +313,6 @@ const reviewProduct = async (id, data) => {
 const fetchReviews = async (id) => {
     const response = await fetch(`${beUrl}/api/products/${id}/reviews`, {
         method: 'GET',
-        headers: {  
-            Authorization: `Bearer ${token}`,
-        },
     });
     const responseData = await response.json();
     if (!response.ok) {
@@ -389,13 +339,11 @@ const deleteReview = async (id, name) => {
     return responseData;
 }
 
-const reorderProduct = async (orderId, Usertoken) => {
+const reorderProduct = async (orderId) => {
     const response = await fetch(`${beUrl}/api/payments/reorder/${orderId}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${Usertoken}`,
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
     });
 
     const responseData = await response.json();
@@ -406,14 +354,11 @@ const reorderProduct = async (orderId, Usertoken) => {
     return responseData;
 }
 
-const addProductToCart = async (userId, itemId, Usertoken) => {
-
+const addProductToCart = async (userId, itemId) => {
     const response = await fetch(`${beUrl}/api/cart/add`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${Usertoken}`,
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, itemId }),
     });
 
@@ -426,15 +371,13 @@ const addProductToCart = async (userId, itemId, Usertoken) => {
     return responseData;
 };
 
-const updateCart = async (itemId, quantity, Usertoken) => {
+const updateCart = async (itemId, quantity) => {
     const userId = localStorage.getItem('userID');
     const response = await fetch(`${beUrl}/api/cart/update/${itemId}`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${Usertoken}`,
-        },
-        body: JSON.stringify({ userId,quantity }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, quantity }),
     });
 
     const responseData = await response.json();
@@ -446,12 +389,10 @@ const updateCart = async (itemId, quantity, Usertoken) => {
     return responseData;
 }
 
-const getUserCart = async (userId, Usertoken) => {
+const getUserCart = async (userId) => {
     const response = await fetch(`${beUrl}/api/cart?userId=${userId}`, {
         method: 'GET',
-        headers: {
-            Authorization: `Bearer ${Usertoken}`,
-        },
+        credentials: 'include',
     });
 
     const responseData = await response.json();
@@ -463,16 +404,12 @@ const getUserCart = async (userId, Usertoken) => {
     return responseData;
 }
 
-const deleteFromCart = async(userId,itemId,Usertoken) =>{
-    
+const deleteFromCart = async(userId, itemId) =>{
     const response = await fetch(`${beUrl}/api/cart/delete/${itemId}`, {
         method: "DELETE",
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${Usertoken}`,
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
-        
     });
 
     const responseData = await response.json();
@@ -485,14 +422,10 @@ const deleteFromCart = async(userId,itemId,Usertoken) =>{
 }
 
 const AddProfile = async (data) =>{
-    const Usertoken = localStorage.getItem('Usertoken');
     const response = await fetch(`${beUrl}/api/profile`, {
         method: 'POST',
-        headers: {
-            Authorization: `Bearer ${Usertoken}`,
-            'Content-Type': 'application/json',
-            
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 
@@ -506,13 +439,10 @@ const AddProfile = async (data) =>{
 }
 
 const fetchUserProfile = async () => {
-    const userToken = localStorage.getItem('Usertoken');
     const response = await fetch(`${beUrl}/api/userProfile`, {
         method: 'GET',
-        headers: {
-            Authorization: `Bearer ${userToken}`,
-            'Content-Type': 'application/json'
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
     });
 
     const responseData = await response.json();
@@ -580,22 +510,9 @@ const resetPassword = async(token, newPassword, isAdmin = false) => {
 
 const verification = async (email, verificationCode, isAdmin = false) => {
     try {
-        const token = isAdmin ? 
-            localStorage.getItem('admintoken') : 
-            localStorage.getItem('Usertoken');
-
-        const response = await axios.post(`${beUrl}/api/verify-login`, 
-            {
-                email,
-                verificationCode,
-                isAdmin
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : ''
-                }
-            }
+        const response = await axios.post(`${beUrl}/api/verify-login`,
+            { email, verificationCode, isAdmin },
+            { headers: { 'Content-Type': 'application/json' }, withCredentials: true }
         );
 
         console.log('Verification response:', response.data);
@@ -623,13 +540,10 @@ const verification = async (email, verificationCode, isAdmin = false) => {
 // Fix createPaymentIntent
 const createPaymentIntent = async (paymentData) => {
     try {
-        const Usertoken = localStorage.getItem('Usertoken');
-        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, { // Added payments prefix
+        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Usertoken}`,
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(paymentData),
         });
 
@@ -649,13 +563,10 @@ const createPaymentIntent = async (paymentData) => {
 // Fix getPayment
 const getPayment = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('Usertoken'); // Fixed token name
-        const response = await fetch(`${beUrl}/api/payments/payment/${orderId}`, { // Added payments prefix
+        const response = await fetch(`${beUrl}/api/payments/payment/${orderId}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${Usertoken}`,
-                'Content-Type': 'application/json'
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
         });
 
         const responseData = await response.json();
@@ -672,15 +583,12 @@ const getPayment = async (orderId) => {
 };
 
 // Fix getUserPayments
-const getUserPayments = async (userId, token) => {
+const getUserPayments = async (userId) => {
     try {
-        const Usertoken = token || localStorage.getItem('Usertoken');
-        const response = await fetch(`${beUrl}/api/payments/user/${userId}`, { // Added payments prefix
+        const response = await fetch(`${beUrl}/api/payments/user/${userId}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${Usertoken}`,
-                'Content-Type': 'application/json'
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
         });
 
         const responseData = await response.json();
@@ -699,13 +607,10 @@ const getUserPayments = async (userId, token) => {
 // Fix refundPayment
 const refundPayment = async (refundData) => {
     try {
-        const Admintoken = localStorage.getItem('admintoken');
-        const response = await fetch(`${beUrl}/api/payments/refund`, { // Added payments prefix
+        const response = await fetch(`${beUrl}/api/payments/refund`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Admintoken}`,
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(refundData),
         });
 
@@ -726,18 +631,13 @@ const refundPayment = async (refundData) => {
 const processPayment = async (cartItems, totalAmount, shippingAddress) => {
     try {
         const userId = localStorage.getItem('userID');
-        const token = localStorage.getItem('Usertoken');
-        
-        if (!userId || !token) {
-            throw new Error('User not authenticated');
-        }
 
-        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, { // Added payments prefix
+        if (!userId) throw new Error('User not authenticated');
+
+        const response = await fetch(`${beUrl}/api/payments/create-payment-intent`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId,
                 amount: parseFloat(totalAmount),
@@ -768,12 +668,9 @@ const processPayment = async (cartItems, totalAmount, shippingAddress) => {
 // Fix getPaymentStatus
 const getPaymentStatus = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('Usertoken'); // Fixed token name
-        const response = await fetch(`${beUrl}/api/payments/status/${orderId}`, { // Added payments prefix
+        const response = await fetch(`${beUrl}/api/payments/status/${orderId}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${Usertoken}`,
-            },
+            credentials: 'include',
         });
 
         const responseData = await response.json();
@@ -791,15 +688,12 @@ const getPaymentStatus = async (orderId) => {
 
 const confirmPayment = async (paymentIntentId) => {
     try {
-        const Usertoken = localStorage.getItem('Usertoken');
-        const response = await fetch(`${beUrl}/api/payments/confirm`, { // Added payments prefix
+        const response = await fetch(`${beUrl}/api/payments/confirm`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Usertoken}`,
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paymentIntentId }),
-        }); 
+        });
         const responseData = await response.json();
         if (!response.ok) {
             console.log('Confirm Payment Error:', responseData);
@@ -815,12 +709,9 @@ const confirmPayment = async (paymentIntentId) => {
 // Fix orderDetails
 const orderDetails = async (orderId) => {
     try {
-        const Usertoken = localStorage.getItem('Usertoken');
-        const response = await fetch(`${beUrl}/api/payments/order-details/${orderId}`, { // Added payments prefix
+        const response = await fetch(`${beUrl}/api/payments/order-details/${orderId}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${Usertoken}`,
-            },
+            credentials: 'include',
         });
 
         const responseData = await response.json();
@@ -837,8 +728,8 @@ const orderDetails = async (orderId) => {
 };
 
 // Get all payments for a user (alias for getUserPayments for compatibility)
-const getAllPayments = async (userId, token) => {
-    return await getUserPayments(userId, token);
+const getAllPayments = async (userId) => {
+    return await getUserPayments(userId);
 };
 
 // In Constant.js - Add polling function
@@ -846,11 +737,8 @@ const pollPaymentStatus = async (paymentIntentId, maxAttempts = 30) => {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
             const response = await fetch(`${beUrl}/api/payments/check-status/${paymentIntentId}`, {
-                headers:
-                 {
-                    'Authorization': `Bearer ${localStorage.getItem('Usertoken')}`,
-                    'Content-Type': 'application/json'
-                }
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
             });
             
             const result = await response.json();
@@ -910,18 +798,11 @@ const usePaymentStatusListener = (orderId, onStatusUpdate) => {
 // Direct Purchase Function
 const createDirectPurchase = async (purchaseData) => {
     try {
-        const token = localStorage.getItem('Usertoken');
-        if (!token) throw new Error('Authentication required');
-
-        console.log("📤 Sending purchase data:", purchaseData);
-
         const response = await fetch(`${beUrl}/api/direct-purchase`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(purchaseData)  // Make sure this is the flat object
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(purchaseData)
         });
 
         const responseData = await response.json();
@@ -941,16 +822,12 @@ const createDirectPurchase = async (purchaseData) => {
 const getUserOrderHistory = async () => {
     try {
         const userId = localStorage.getItem('userID');
-        const token = localStorage.getItem('Usertoken');
-        
-        if (!userId || !token) throw new Error('Authentication required');
+        if (!userId) throw new Error('Authentication required');
 
         const response = await fetch(`${beUrl}/api/user-orders?userId=${userId}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
         });
 
         const responseData = await response.json();

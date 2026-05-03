@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
 import { Form, Button, Col, Row, Card } from 'react-bootstrap';
 import { addProduct } from '../Constant';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import './dashboard.css';
 
 import { 
@@ -259,8 +259,6 @@ const AddProd = () => {
           </div>
         </Form>
       </div>
-      <ToastContainer position="bottom-right" />
-      
       <style jsx>{`
     .content-wrapper {
         background: linear-gradient(135deg, #ffffff 0%, #f0f2f5 100%);

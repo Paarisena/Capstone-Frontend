@@ -45,21 +45,33 @@ function App() {
   const location = useLocation(); 
   const hideNavBar = location.pathname.startsWith("/admin") || location.pathname === "/AdLogin" || location.pathname === "/Register" || location.pathname === "/Admin";
 
-  const handleLogin = () => {
-    const Loggedin = Boolean(localStorage.getItem("Usertoken"));
+  const handleLogin = async () => {
+    const Loggedin = Boolean(localStorage.getItem("userID"));
     if (Loggedin) {
-        localStorage.removeItem("Usertoken"); // Log out the user
-        navigate("/login"); // Refresh the page
+        await fetch(`${import.meta.env.VITE_BE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
+        ["userID", "Useremail", "Username", "userRole"].forEach(k => localStorage.removeItem(k));
+        window.dispatchEvent(new Event('auth-change'));
+        navigate("/login");
     } else {
-        window.location.href = "/Login"; // Redirect to login page
+        window.location.href = "/Login";
     }
 };
-const Loggedin = Boolean(localStorage.getItem("Usertoken"));
+const Loggedin = Boolean(localStorage.getItem("userID"));
 
 
   return (
     <div>
-      <ToastContainer />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+        style={{ zIndex: 99999 }}
+      />
       
 
       
