@@ -262,11 +262,16 @@ export const getAuthHeaders = (isAdmin = false) => {
     const tokenKey = isAdmin ? 'admintoken' : 'Usertoken';
     const token = getToken(tokenKey);
     
-    return {
+    const headers = {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
         'X-CSRF-Token': getCSRFToken()
     };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
 };
 
 /**

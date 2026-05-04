@@ -23,12 +23,7 @@ export const sanitizeHTML = (dirty) => {
  */
 export const sanitizeInput = (input) => {
     if (typeof input !== 'string') return input;
-    
-    return input
-        .trim()
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/javascript:/gi, '')
-        .replace(/on\w+\s*=/gi, '');
+    return DOMPurify.sanitize(input.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
 };
 
 /**
@@ -321,82 +316,6 @@ export const decodeToken = (token) => {
     }
 };
 
-// ==================== SECURE STORAGE ====================
-
-/**
- * Encrypt sensitive data before storing (basic XOR encryption)
- * Note: For production, use a proper encryption library
- */
-export const encryptData = (data, key = 'default-key') => {
-    try {
-        const jsonString = JSON.stringify(data);
-        let encrypted = '';
-        
-        for (let i = 0; i < jsonString.length; i++) {
-            encrypted += String.fromCharCode(
-                jsonString.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-            );
-        }
-        
-        return btoa(encrypted);
-    } catch (error) {
-        console.error('Encryption error:', error);
-        return null;
-    }
-};
-
-/**
- * Decrypt stored data
- */
-export const decryptData = (encryptedData, key = 'default-key') => {
-    try {
-        const encrypted = atob(encryptedData);
-        let decrypted = '';
-        
-        for (let i = 0; i < encrypted.length; i++) {
-            decrypted += String.fromCharCode(
-                encrypted.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-            );
-        }
-        
-        return JSON.parse(decrypted);
-    } catch (error) {
-        console.error('Decryption error:', error);
-        return null;
-    }
-};
-
-/**
- * Securely store sensitive data
- */
-export const secureStore = (key, data) => {
-    try {
-        const encrypted = encryptData(data);
-        if (encrypted) {
-            sessionStorage.setItem(key, encrypted);
-            return true;
-        }
-        return false;
-    } catch (error) {
-        console.error('Secure store error:', error);
-        return false;
-    }
-};
-
-/**
- * Retrieve securely stored data
- */
-export const secureRetrieve = (key) => {
-    try {
-        const encrypted = sessionStorage.getItem(key);
-        if (!encrypted) return null;
-        
-        return decryptData(encrypted);
-    } catch (error) {
-        console.error('Secure retrieve error:', error);
-        return null;
-    }
-};
 
 // ==================== CSRF PROTECTION ====================
 
@@ -575,10 +494,6 @@ export default {
     removeToken,
     isTokenExpired,
     decodeToken,
-    encryptData,
-    decryptData,
-    secureStore,
-    secureRetrieve,
     generateCSRFToken,
     getCSRFToken,
     rateLimit,

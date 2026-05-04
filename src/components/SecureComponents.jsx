@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { sanitizeFormData, validateFormSubmission } from '../utils/secureApi';
+import { sanitizeInput } from '../utils/security';
 
 /**
  * Secure Form Component with built-in validation and sanitization
@@ -86,7 +87,7 @@ export const SecureInput = ({
         
         // Sanitize input if enabled
         if (sanitize && typeof inputValue === 'string') {
-            inputValue = inputValue.trim();
+            inputValue = sanitizeInput(inputValue);
         }
         
         // Update parent
