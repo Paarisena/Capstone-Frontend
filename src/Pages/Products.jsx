@@ -29,6 +29,7 @@ const InnerView = () => {
         }));
     };
 
+
     const handleAddToCart = async () => {
         const userId = localStorage.getItem("userID");
 
@@ -239,6 +240,8 @@ const InnerView = () => {
             </Container>
         );
     }
+
+    
 
     const images = Array.isArray(product.Image) && product.Image.length > 0
         ? product.Image
